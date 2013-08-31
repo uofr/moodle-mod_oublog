@@ -15,19 +15,18 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 $string['attachments'] = "Attachments";
-$string['oublog'] = 'OU blog';
-$string['modulename'] = 'OU blog';
-$string['modulenameplural'] = 'OU blogs';
-$string['modulename_help'] = 'This allows for the creation of blogs within a module (which are separate
-to the core Moodle blog system). You can have module-wide blogs (everyone in the module posts to the same
-blog), group blogs, or individual blogs. The blog activity can be renamed to reflect its purpose e.g. Learning Log.';
+$string['oublog'] = 'Blog';
+$string['modulename'] = 'Blog';
+$string['modulenameplural'] = 'Blogs';
+$string['modulename_help'] = 'This activity allows you to create blogs within a course. You can have course-wide blogs (everyone in
+ the course posts to the same blog), group blogs, or individual blogs.';
 
 $string['oublogintro'] = 'Intro';
 $string['lastmodified'] = 'Last post: {$a}';
 $string['strftimerecent'] = '%d %B %y, %H:%M';
 
 $string['oublog:view'] = 'View posts';
-$string['oublog:addinstance'] = 'Add a new OU blog';
+$string['oublog:addinstance'] = 'Add a new blog';
 $string['oublog:viewpersonal'] = 'View posts in personal blogs';
 $string['oublog:viewprivate'] = 'View private posts in personal blogs';
 $string['oublog:contributepersonal'] = 'Post and comment in personal blogs';
@@ -238,9 +237,9 @@ $string['completioncomments'] = 'User must make comments on blog posts:';
 $string['completiondetail:posts'] = 'Make {$a->name} posts: {$a->number}';
 $string['completiondetail:comments'] = 'Make comments: {$a}';
 
-$string['computingguide'] = 'Guide to OU blogs';
-$string['computingguideurl'] = 'Computing guide URL';
-$string['computingguideurlexplained'] = 'Enter the URL for the OU blogs omputing guide';
+$string['computingguide']='Guide to blogs';
+$string['computingguideurl']='Computing guide URL';
+$string['computingguideurlexplained']='Enter the URL for the blogs computing guide';
 
 $string['maybehiddenposts'] = 'This {$a->name} might contain posts that are only
 visible to logged-in users, or where only logged-in users can comment. If you
@@ -435,9 +434,9 @@ $string['externaldashboardremove'] = 'Remove blog from dashboard';
 $string['viewblogdetails'] = 'View blog details';
 $string['viewblogposts'] = 'Return to blog';
 
-// User participation.
-$string['oublog:grade'] = 'Grade OU Blog user participation';
-$string['oublog:viewparticipation'] = 'View OU Blog user participation';
+// User participation
+$string['oublog:grade'] = 'Grade blog user participation';
+$string['oublog:viewparticipation'] = 'View blog user participation';
 $string['userparticipation'] = 'User participation';
 $string['usersparticipation'] = 'All users participation';
 $string['myparticipation'] = 'My participation summary';
