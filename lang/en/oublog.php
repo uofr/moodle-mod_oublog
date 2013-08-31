@@ -1,16 +1,15 @@
 <?php
 $string['attachments'] = "Attachments";
-$string['oublog'] = 'OU blog';
-$string['modulename'] = 'OU blog';
-$string['modulenameplural'] = 'OU blogs';
-$string['modulename_help'] = 'The blog activity module allows for creation of blogs within a course
- (these are separate to the core Moodle blog system). You can have course-wide blogs (everyone in
+$string['oublog'] = 'Blog';
+$string['modulename'] = 'Blog';
+$string['modulenameplural'] = 'Blogs';
+$string['modulename_help'] = 'This activity allows you to create blogs within a course. You can have course-wide blogs (everyone in
  the course posts to the same blog), group blogs, or individual blogs.';
 
 $string['oublogintro'] = 'Intro';
 
 $string['oublog:view'] = 'View posts';
-$string['oublog:addinstance'] = 'Add a new OU blog';
+$string['oublog:addinstance'] = 'Add a new blog';
 $string['oublog:viewpersonal'] = 'View posts in personal blogs';
 $string['oublog:contributepersonal'] = 'Post and comment in personal blogs';
 $string['oublog:post'] = 'Create a new post';
@@ -156,9 +155,9 @@ $string['completioncommentsgroup']='Require comments';
 $string['completioncommentsgroup_help']='If you enable this option, the blog will be marked as complete for a student once they have left the specified number of comments.';
 $string['completioncomments']='User must make comments on blog posts:';
 
-$string['computingguide']='Guide to OU blogs';
+$string['computingguide']='Guide to blogs';
 $string['computingguideurl']='Computing guide URL';
-$string['computingguideurlexplained']='Enter the URL for the OU blogs omputing guide';
+$string['computingguideurlexplained']='Enter the URL for the blogs computing guide';
 
 $string['maybehiddenposts']='This blog might contain posts that are only
 visible to logged-in users, or where only logged-in users can comment. If you
@@ -357,8 +356,8 @@ $string['viewblogdetails'] = 'View blog details';
 $string['viewblogposts'] = 'Return to blog';
 
 // User participation
-$string['oublog:grade'] = 'Grade OU Blog user participation';
-$string['oublog:viewparticipation'] = 'View OU Blog user participation';
+$string['oublog:grade'] = 'Grade blog user participation';
+$string['oublog:viewparticipation'] = 'View blog user participation';
 $string['userparticipation'] = 'User participation';
 $string['myparticipation'] = 'My participation';
 $string['savegrades'] = 'Save grades';
