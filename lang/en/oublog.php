@@ -128,7 +128,7 @@ $string['newcomment'] = 'New blog comment';
 
 $string['searchthisblog'] = 'Search this blog';
 $string['searchblogs'] = 'Search blogs';
-$string['searchthisblog_help'] = 'Type your search term and press Enter or click the button.
+$string['searchthisblog_help'] = 'Type your search term and press Enter or use the search button.
 
 To search for exact phrases use quote marks.
 
