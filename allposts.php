@@ -24,8 +24,8 @@
 require_once('../../config.php');
 require_once('locallib.php');
 
-$offset = optional_param('offset', 0, PARAM_INT);   // Offset for paging.
 $tag    = optional_param('tag', null, PARAM_TAG);   // Tag to display.
+$page = optional_param('page', 0, PARAM_INT);
 
 if (!$oublog = $DB->get_record("oublog", array("global"=>1))) { // The personal blogs module.
     print_error('personalblognotsetup', 'oublog');
@@ -39,11 +39,21 @@ if (!$course = $DB->get_record("course", array("id" => $cm->course))) {
     print_error('coursemisconf');
 }
 
-$url = new moodle_url('/mod/oublog/allposts.php', array('offset' => $offset, 'tag'=>$tag));
+$offset = $page * OUBLOG_POSTS_PER_PAGE;
+$url = new moodle_url('/mod/oublog/allposts.php', array(
+        'page' => $page,
+        'tag' => $tag));
 $PAGE->set_url($url);
 
-$context = get_context_instance(CONTEXT_MODULE, $cm->id);
-oublog_check_view_permissions($oublog, $context, $cm);
+$context = context_module::instance($cm->id);
+if (!empty($CFG->oublogallpostslogin) && $oublog->maxvisibility == OUBLOG_VISIBILITY_PUBLIC) {
+    // Set blog visibility temporarily to loggedin user to force login to this page.
+    $oublog->maxvisibility = OUBLOG_VISIBILITY_LOGGEDINUSER;
+    oublog_check_view_permissions($oublog, $context, $cm);
+    $oublog->maxvisibility = OUBLOG_VISIBILITY_PUBLIC;
+} else {
+    oublog_check_view_permissions($oublog, $context, $cm);
+}
 
 $oublogoutput = $PAGE->get_renderer('mod_oublog');
 
@@ -71,7 +81,7 @@ $strblogsearch  = get_string('searchblogs', 'oublog');
 
 // Get Posts.
 list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, null, -1, null,
-        $tag, $canaudit);
+        $tag, $canaudit, true);
 
 $PAGE->set_title(format_string($oublog->name));
 $PAGE->set_heading(format_string($course->fullname));
@@ -106,8 +116,6 @@ $PAGE->set_button($buttontext);
 
 $PAGEWILLCALLSKIPMAINDESTINATION = true; // OU accessibility feature.
 
-// The left column ...
-$hasleft = !empty($CFG->showblocksonmodpages);
 // The right column, BEFORE the middle-column.
 if (isloggedin() and !isguestuser()) {
     list($oublog, $oubloginstance) = oublog_get_personal_blog($USER->id);
@@ -118,6 +126,25 @@ if (isloggedin() and !isguestuser()) {
     $bc->title = format_string($oublog->name);
     $bc->content = $blogeditlink;
     $PAGE->blocks->add_fake_block($bc, BLOCK_POS_RIGHT);
+}
+
+if ($oublog->statblockon) {
+    // 'Discovery' block.
+    $stats = array();
+    $stats[] = oublog_stats_output_participation($oublog, $cm, $oublogoutput, $course, true);
+    $stats[] = oublog_stats_output_commentpoststats($oublog, $cm, $oublogoutput, false, true);
+    $stats[] = oublog_stats_output_visitstats($oublog, $cm, $oublogoutput);
+    $stats[] = oublog_stats_output_poststats($oublog, $cm, $oublogoutput);
+    $stats[] = oublog_stats_output_commentstats($oublog, $cm, $oublogoutput);
+    $stats = $oublogoutput->render_stats_container('allposts', $stats);
+    $bc = new block_contents();
+    $bc->attributes['id'] = 'oublog-discover';
+    $bc->attributes['class'] = 'oublog-sideblock block';
+    $bc->title = get_string('discovery', 'oublog', oublog_get_displayname($oublog, true));
+    $bc->content = $stats;
+    if (!empty($stats)) {
+        $PAGE->blocks->add_fake_block($bc, BLOCK_POS_RIGHT);
+    }
 }
 
 if ($feeds = oublog_get_feedblock($oublog, 'all', '', false, $cm)) {
@@ -131,39 +158,28 @@ if ($feeds = oublog_get_feedblock($oublog, 'all', '', false, $cm)) {
 // Must be called after add_fake_blocks.
 echo $OUTPUT->header();
 // Start main column.
-$classes='';
-$classes.=$hasleft ? 'has-left-column ' : '';
-$classes.='has-right-column ';
-$classes=trim($classes);
-if ($classes) {
-    print '<div id="middle-column" class="'.$classes.'">';
-} else {
-    print '<div id="middle-column">';
-}
-print skip_main_destination();
+print '<div id="middle-column" class="has-right-column">';
+
+print $OUTPUT->skip_link_target();
+
+// Renderer hook so extra info can be added to global blog pages in theme.
+echo $oublogoutput->render_viewpage_prepost();
 
 // Print blog posts.
 if ($posts) {
+    echo "<div class='oublog-paging'>";
+    echo $OUTPUT->paging_bar($recordcount, $page, OUBLOG_POSTS_PER_PAGE, $returnurl);
+    echo '</div>';
     echo '<div id="oublog-posts">';
     $rowcounter = 1;
     foreach ($posts as $post) {
         $post->row = $rowcounter;
         echo $oublogoutput->render_post($cm, $oublog, $post, $returnurl, $blogtype,
-                $canmanageposts, $canaudit, false, false);
+                $canmanageposts, $canaudit, true, false);
         $rowcounter++;
     }
-    if ($offset > 0) {
-        if ($offset-OUBLOG_POSTS_PER_PAGE == 0) {
-            print "<div class='oublog-newerposts'><a href=\"$returnurl\">$strnewposts</a></div>";
-        } else {
-            print "<div class='oublog-newerposts'><a href=\"$returnurl&amp;offset=" .
-            ($offset-OUBLOG_POSTS_PER_PAGE) . "\">$strnewposts</a></div>";
-        }
-    }
-    if ($recordcount - $offset > OUBLOG_POSTS_PER_PAGE) {
-        echo "<a href=\"$returnurl&amp;offset=" . ($offset+OUBLOG_POSTS_PER_PAGE) .
-                "\">$strolderposts</a>";
-    }
+    echo "<div class='oublog-paging'>";
+    echo $OUTPUT->paging_bar($recordcount, $page, OUBLOG_POSTS_PER_PAGE, $returnurl);
     echo '</div>';
 }
 
@@ -171,9 +187,9 @@ if ($posts) {
 // them know if there are no posts in the blog.
 if (!isloggedin() || isguestuser()) {
     print '<p class="oublog_loginnote">' . get_string('maybehiddenposts', 'oublog',
-            'bloglogin.php') . '</p>';
+            (object) array('link' => 'bloglogin.php', 'name' => oublog_get_displayname($oublog))) . '</p>';
 } else if (!$posts) {
-    print '<p class="oublog_noposts">' . get_string('noposts', 'oublog') . '</p>';
+    print '<p class="oublog_noposts">' . get_string('noposts', 'oublog', oublog_get_displayname($oublog)) . '</p>';
 }
 print '</div>';
 // Finish the page.

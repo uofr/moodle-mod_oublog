@@ -39,13 +39,22 @@
  */
 function oublog_add_instance($oublog) {
     global $DB;
-    // Generate an accesstoken
+    // Generate an accesstoken.
     $oublog->accesstoken = md5(uniqid(rand(), true));
 
     if (!$oublog->id = $DB->insert_record('oublog', $oublog)) {
         return(false);
     }
-
+    if (!empty($oublog->tags)) {
+        $blogtags = oublog_clarify_tags($oublog->tags);
+        // For each tag added to the blog check if it exists in oublog_tags table,
+        // if it does not a tag record is created.
+        foreach ($blogtags as $tag) {
+            if (!$DB->get_record('oublog_tags', array('tag' => $tag))) {
+                $DB->insert_record('oublog_tags', (object) array('tag' => $tag));
+            }
+        }
+    }
     oublog_grade_item_update($oublog);
 
     return($oublog->id);
@@ -65,12 +74,21 @@ function oublog_update_instance($oublog) {
     global $DB;
     $oublog->id = $oublog->instance;
 
-    if (!$blog = $DB->get_record('oublog', array('id'=>$oublog->id))) {
+    if (!$DB->get_record('oublog', array('id' => $oublog->id))) {
         return(false);
     }
 
     if (!$DB->update_record('oublog', $oublog)) {
         return(false);
+    }
+
+    $blogtags = oublog_clarify_tags($oublog->tags);
+    // For each tag in the blog check if it already exists in oublog_tags table,
+    // if it does not a tag record is created.
+    foreach ($blogtags as $tag) {
+        if (!$DB->get_record('oublog_tags', array('tag' => $tag))) {
+            $DB->insert_record('oublog_tags', (object) array('tag' => $tag));
+        }
     }
 
     oublog_grade_item_update($oublog);
@@ -256,10 +274,10 @@ function oublog_print_recent_activity($course, $isteacher, $timestart) {
         if (!$cm->uservisible) {
             continue;
         }
-        if (!has_capability('mod/oublog:view', get_context_instance(CONTEXT_MODULE, $cm->id))) {
+        if (!has_capability('mod/oublog:view', context_module::instance($cm->id))) {
             continue;
         }
-        if (!has_capability('mod/oublog:view', get_context_instance(CONTEXT_USER, $blog->userid))) {
+        if (!has_capability('mod/oublog:view', context_user::instance($blog->userid))) {
             continue;
         }
 
@@ -336,10 +354,10 @@ function oublog_get_recent_mod_activity(&$activities, &$index, $timestart, $cour
         if (!$cm->uservisible) {
             continue;
         }
-        if (!has_capability('mod/oublog:view', get_context_instance(CONTEXT_MODULE, $cm->id))) {
+        if (!has_capability('mod/oublog:view', context_module::instance($cm->id))) {
             continue;
         }
-        if (!has_capability('mod/oublog:view', get_context_instance(CONTEXT_USER, $blog->userid))) {
+        if (!has_capability('mod/oublog:view', context_user::instance($blog->userid))) {
             continue;
         }
 
@@ -440,55 +458,6 @@ function oublog_cron() {
     $DB->delete_records_select('oublog_comments_moderated', "timeposted < ?", array($outofdate));
 
     return true;
-}
-
-
-
-/**
- * Execute post-install custom actions for the module
- *
- * @return boolean true if success, false on error
- */
-function oublog_post_install() {
-    global $DB, $CFG;
-    require_once('locallib.php');
-
-    // Setup the global blog.
-    $oublog = new stdClass;
-    $oublog->course = SITEID;
-    $oublog->name = 'Personal Blogs';
-    $oublog->intro = '';
-    $oublog->introformat = FORMAT_HTML;
-    $oublog->accesstoken = md5(uniqid(rand(), true));
-    $oublog->maxvisibility = OUBLOG_VISIBILITY_PUBLIC;
-    $oublog->global = 1;
-    $oublog->allowcomments = OUBLOG_COMMENTS_ALLOWPUBLIC;
-
-    if (!$oublog->id = $DB->insert_record('oublog', $oublog)) {
-        return(false);
-    }
-
-    $mod = new stdClass;
-    $mod->course   = SITEID;
-    $mod->module   = $DB->get_field('modules', 'id', array('name'=>'oublog'));
-    $mod->instance = $oublog->id;
-    $mod->visible  = 1;
-    $mod->visibleold  = 0;
-    $mod->section = 1;
-
-    if (!$cm = add_course_module($mod)) {
-        return(true);
-    }
-    $mod->id = $cm;
-    $mod->coursemodule = $cm;
-
-    $mod->section = course_add_cm_to_section($mod->course, $mod->coursemodule, 1);
-
-    $DB->update_record('course_modules', $mod);
-
-    set_config('oublogsetup', true);
-
-    return(true);
 }
 
 /**
@@ -841,8 +810,9 @@ function oublog_pluginfile($course, $cm, $context, $filearea, $args, $forcedownl
     }
 
     // Make sure we're allowed to see it...
-
-    if ($filearea != 'summary' && !oublog_can_view_post($post, $USER, $context, $oublog->global)) {
+    // Check if coming from webservice - if so always allow.
+    $ajax = constant('AJAX_SCRIPT') ? true : false;
+    if ($filearea != 'summary' && !$ajax && !oublog_can_view_post($post, $USER, $context, $oublog->global)) {
         return false;
     }
     if ($filearea == 'attachment') {
@@ -926,14 +896,20 @@ function oublog_get_file_info($browser, $areas, $course, $cm, $context, $fileare
  * @param cm_info $cm
  */
 function oublog_cm_info_dynamic(cm_info $cm) {
+    global $remoteuserid, $USER;
+    $userid = $USER;
+    if (isset($remoteuserid) && !empty($remoteuserid)) {
+        // Hack using dodgy global. The actual user id for specific user e.g. from webservice.
+        $userid = $remoteuserid;
+    }
     $capability = 'mod/oublog:view';
     if ($cm->course == SITEID && $cm->instance == 1) {
         // Is global blog (To save DB call we make suspect assumption it is instance 1)?
         $capability = 'mod/oublog:viewpersonal';
     }
     if (!has_capability($capability,
-            context_module::instance($cm->id))) {
-        $cm->uservisible = false;
+            context_module::instance($cm->id), $userid)) {
+        $cm->set_user_visible(false);
         $cm->set_available(false);
     }
 }
@@ -991,7 +967,9 @@ function oublog_grade_item_delete($oublog) {
  * Returns all other caps used in oublog at module level.
  */
 function oublog_get_extra_capabilities() {
-    return array('moodle/site:accessallgroups', 'moodle/site:viewfullnames');
+    return array('moodle/site:accessallgroups', 'moodle/site:viewfullnames',
+            'report/oualerts:managealerts', 'report/restrictuser:view',
+            'report/restrictuser:restrict', 'report/restrictuser:removerestrict');
 }
 
 /**
@@ -1078,4 +1056,100 @@ function oublog_reset_userdata($data) {
         );
     }
     return $status;
+}
+
+/**
+ * List of view style log actions
+ * @return array
+ */
+function oublog_get_view_actions() {
+    return array('view', 'view all');
+}
+
+/**
+ * List of update style log actions
+ * @return array
+ */
+function oublog_get_post_actions() {
+    return array('update', 'add', 'add comment', 'add post', 'edit post');
+}
+
+function oublog_oualerts_additional_recipients($type, $id) {
+    global $CFG, $USER, $DB;
+    require_once($CFG->dirroot . '/mod/oublog/locallib.php');
+    $additionalemails = '';
+
+    switch ($type) {
+        case 'post':
+            $data = oublog_get_blog_from_postid ($id);
+            break;
+        case 'comment':
+            $postid = $DB->get_field('oublog_comments', 'postid', array('id' => $id));
+            $data = oublog_get_blog_from_postid($postid);
+            break;
+        default:
+            $data = false;
+            break;
+    }
+    if ($data != false) {
+        // Return alert recipients addresses for notification.
+        $reportingemails = oublog_get_reportingemail($data);
+        if ($reportingemails != false) {
+            $additionalemails = explode(',', trim($reportingemails));
+        }
+    }
+    return $additionalemails;
+}
+
+function oublog_oualerts_custom_info($item, $id) {
+    global $CFG, $USER, $DB;
+
+    require_once($CFG->dirroot . '/mod/oublog/locallib.php');
+
+    switch ($item) {
+        case 'post':
+            $data =  oublog_get_post($id);
+            $itemtitle = get_string('untitledpost', 'oublog');
+            break;
+        case 'comment':
+            $data = $DB->get_record('oublog_comments', array('id' => $id));
+            $itemtitle = get_string('untitledcomment', 'oublog');
+            break;
+        default:
+            $data = false;
+            break;
+    }
+
+    if ($data != false && !empty($data->title)) {
+        $itemtitle = $data->title;
+    }
+    // Return just the title string value of the post or comment.
+    return $itemtitle;
+}
+
+/**
+ * If OU alerts is enabled, and the blog has reporting email setup,
+ * if the user has the report/oualerts:managealerts capability for the context then
+ * the link to the alerts report should be added.
+ *
+ * @global object
+ * @global object
+ */
+function oublog_extend_settings_navigation(settings_navigation $settings, navigation_node $node) {
+    global $DB, $CFG, $PAGE;
+
+    if (!$oublog = $DB->get_record("oublog", array("id" => $PAGE->cm->instance))) {
+        return;
+    }
+
+    include_once($CFG->dirroot.'/mod/oublog/locallib.php');
+    if (oublog_oualerts_enabled() && oublog_get_reportingemail($oublog)) {
+        if (has_capability('report/oualerts:managealerts',
+                context_module::instance($PAGE->cm->id))) {
+            $node->add(get_string('oublog_managealerts', 'oublog'),
+                    new moodle_url('/report/oualerts/manage.php', array('cmid' => $PAGE->cm->id,
+                            'coursename' => $PAGE->course->id, 'contextcourseid' => $PAGE->course->id)),
+                            settings_navigation::TYPE_CUSTOM);
+        }
+    }
 }

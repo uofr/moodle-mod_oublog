@@ -76,10 +76,12 @@ class mod_oublog_mod_form extends moodleform_mod {
             $mform->setType('maxvisibility', PARAM_INT);
             $mform->addHelpButton('maxvisibility', 'maxvisibility', 'oublog');
 
+            // Whether intro text shows on post form pages.
+            $mform->addElement('checkbox', 'introonpost', get_string('introonpost', 'oublog'), '', 0);
+
             // Max size of attachments.
             $modulesettings = get_config('mod_oublog');
             $choices = get_max_upload_sizes($CFG->maxbytes, $COURSE->maxbytes);
-            $choices[-1] = get_string('uploadnotallowed');
             $mform->addElement('select', 'maxbytes',
                     get_string('maxattachmentsize', 'oublog'), $choices);
             $mform->addHelpButton('maxbytes', 'maxattachmentsize', 'oublog');
@@ -91,6 +93,37 @@ class mod_oublog_mod_form extends moodleform_mod {
                     get_string('maxattachments', 'oublog'), $choices);
             $mform->addHelpButton('maxattachments', 'maxattachments', 'oublog');
             $mform->setDefault('maxattachments', $modulesettings->maxattachments);
+
+            // Enable the stats block.
+            $mform->addElement('checkbox', 'statblockon', get_string('statblockon', 'oublog'), '', 0);
+            $mform->addHelpButton('statblockon', 'statblockon', 'oublog');
+
+            // Show OU Alerts reporting link.
+            if (oublog_oualerts_enabled()) {
+                $mform->addElement('text', 'reportingemail', get_string('reportingemail', 'oublog'),
+                        array('size'=>'48'));
+                $mform->addHelpButton('reportingemail', 'reportingemail', 'oublog');
+                $mform->setType('reportingemail', PARAM_NOTAGS);
+                $mform->addRule('reportingemail', get_string('maximumchars', '', 255),
+                        'maxlength', 255, 'client');
+            }
+
+            $mform->addElement('text', 'displayname', get_string('displayname', 'oublog'),
+                    array('size'=>'48'));
+            $mform->addHelpButton('displayname', 'displayname', 'oublog');
+            $mform->setType('displayname', PARAM_NOTAGS);
+            $mform->addRule('displayname', get_string('maximumchars', '', 255),
+                    'maxlength', 255, 'client');
+
+            $mform->addElement('checkbox', 'allowimport', get_string('allowimport', 'oublog'), '', 0);
+            $mform->addHelpButton('allowimport', 'allowimport', 'oublog');
+
+            $mform->addElement('text', 'tags', get_string('tags', 'oublog'),
+                            array('size'=>'48'));
+            $mform->addHelpButton('tags', 'predefinedtags', 'oublog');
+            $mform->setType('tags', PARAM_TAGLIST);
+            $mform->addRule('tags', get_string('maximumchars', '', 255),
+                            'maxlength', 255, 'client');
 
             $this->standard_grading_coursemodule_elements();
             $mform->setDefault('grade', 0);
@@ -162,6 +195,27 @@ class mod_oublog_mod_form extends moodleform_mod {
                 || $data->individual == OUBLOG_VISIBLE_INDIVIDUAL_BLOGS)) {
             $data->maxvisibility = OUBLOG_VISIBILITY_COURSEUSER;
         }
+        // Set the reportingemail to null if empty so that we have consistency.
+        if (empty($data->reportingemail)) {
+            $data->reportingemail = null;
+        }
+        // Set statblockon to null if empty so that we have consistency.
+        if (empty($data->statblockon)) {
+            $data->statblockon = 0;
+        }
+        if (empty($data->displayname)) {
+            $data->displayname = null;
+        }
+        if (empty($data->allowimport)) {
+            $data->allowimport = 0;
+        }
+        if (empty($data->introonpost)) {
+            $data->introonpost = 0;
+        }
+        if (!empty($data->tags)) {
+            $data->tags = textlib::strtolower(trim($data->tags));
+        }
+
         return $data;
     }
 
@@ -182,10 +236,29 @@ class mod_oublog_mod_form extends moodleform_mod {
     }
 
     public function validation($data, $files) {
+        global $DB;
         $errors = parent::validation($data, $files);
         if (!empty($data['groupmode']) && isset($data['allowcomments']) &&
                 $data['allowcomments'] == OUBLOG_COMMENTS_ALLOWPUBLIC) {
             $errors['allowcomments'] = get_string('error_grouppubliccomments', 'oublog');
+        }
+        if (!empty($data['reportingemail'])) {
+            $emails = explode(',', trim($data['reportingemail']));
+            foreach ($emails as $email) {
+                if (!validate_email($email)) {
+                    $errors['reportingemail'] = get_string('invalidemail', 'forumng');
+                }
+            }
+        }
+        if (!empty($data['allowimport']) && $data['individual'] == OUBLOG_NO_INDIVIDUAL_BLOGS) {
+            // Can only import on individual or global blogs.
+            if (!empty($data['instance'])) {
+                if (!$DB->get_field('oublog', 'global', array('id' => $data['instance']))) {
+                    $errors['allowimport'] = get_string('allowimport_invalid', 'oublog');
+                }
+            } else {
+                $errors['allowimport'] = get_string('allowimport_invalid', 'oublog');
+            }
         }
         return $errors;
     }

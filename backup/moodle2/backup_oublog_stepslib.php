@@ -39,8 +39,8 @@ class backup_oublog_activity_structure_step extends backup_activity_structure_st
         $oublog = new backup_nested_element('oublog', array('id'), array('name', 'course',
                 'accesstoken', 'intro', 'introformat', 'allowcomments', 'individual',
                 'maxbytes', 'maxattachments', 'maxvisibility', 'global', 'views',
-                'completionposts', 'completioncomments'));
-
+                'completionposts', 'completioncomments', 'reportingemail', 'displayname',
+                'statblockon', 'allowimport', 'introonpost', 'tags'));
         $instances = new backup_nested_element('instances');
 
         $instance = new backup_nested_element('instance', array('id'), array(

@@ -15,30 +15,26 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Pretends to wrap transactions. In fact does nothing. If you want a
- * real implementation of this, the OU have one, it goes in /local.
- * @copyright &copy; 2007 The Open University
- * @author s.marshall@open.ac.uk
- * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
- * @package ouwiki
+ * This script is called through AJAX. It confirms that a user is still
+ * logged in and has a valid session before saving edits to a blog page
+ *
+ * @package    mod
+ * @subpackage oublog
+ * @copyright  2014 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class transaction_wrapper {
+define('AJAX_SCRIPT', true);
+require_once(dirname(__FILE__) . '/../../config.php');
 
-    public function __construct(&$localdb=false) {
-    }
+header('Content-Type: text/plain');
 
-    public function complete($ok=true) {
-        return $ok;
-    }
-
-    public function commit() {
-        return true;
-    }
-
-    public function rollback() {
-    }
-
-    public static function is_in_transaction() {
-        return false;
-    }
+try {
+    // Test session - These functions throw exceptions so trap and exit if they fail.
+    // This saves 404 errors and sends a smaller page.
+    require_login(null, true);
+    require_sesskey();
+} catch (moodle_exception $e) {
+    exit;
 }
+
+echo 'ok';
