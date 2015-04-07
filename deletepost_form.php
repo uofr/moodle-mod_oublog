@@ -62,6 +62,9 @@ class mod_oublog_deletepost_form extends moodleform {
         $mform->addElement('hidden', 'delete', $this->_customdata->delete);
         $mform->setType('delete', PARAM_INT);
 
+        $mform->addElement('hidden', 'referurl', $this->_customdata->referurl);
+        $mform->setType('referurl', PARAM_LOCALURL);
+
         $mform->addElement('hidden', 'confirm', 1);
         $mform->setType('confirm', PARAM_INT);
 
@@ -75,11 +78,11 @@ class mod_oublog_deletepost_form extends moodleform {
         if (!empty($data['emailadd'])) {
             $emails = preg_split('~[; ]+~', $data['emailadd']);
             if (count($emails) < 1) {
-                $errors['emailadd'] = get_string('invalidemails', 'forumng');
+                $errors['emailadd'] = get_string('invalidemails', 'oublog');
             } else {
                 foreach ($emails as $email) {
                     if (!validate_email($email)) {
-                        $errors['emailadd'] = get_string('invalidemails', 'forumng');
+                        $errors['emailadd'] = get_string('invalidemails', 'oublog');
                         break;
                     }
                 }

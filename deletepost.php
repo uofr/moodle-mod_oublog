@@ -28,6 +28,7 @@ $postid = required_param('post', PARAM_INT);       // Post ID for editing.
 $confirm = optional_param('confirm', 0, PARAM_INT);// Confirm that it is ok to delete post.
 $delete = optional_param('delete', 0, PARAM_INT);
 $email = optional_param('email', 0, PARAM_INT);    // Email author.
+$referurl = optional_param('referurl', 0, PARAM_LOCALURL);
 
 if (!$oublog = $DB->get_record("oublog", array("id"=>$blog))) {
     print_error('invalidblog', 'oublog');
@@ -66,6 +67,9 @@ if ($oublog->global) {
     $blogtype = 'personal';
     $oubloguser = $USER;
     $viewurl = new moodle_url('/mod/oublog/view.php', array('user' => $postauthor));
+    if (isset($referurl)) {
+        $viewurl = new moodle_url($referurl);
+    }
     // Print the header.
     $PAGE->navbar->add(fullname($oubloguser), new moodle_url('/user/view.php',
             array('id' => $oubloguser->id)));
@@ -73,13 +77,16 @@ if ($oublog->global) {
 } else {
     $blogtype = 'course';
     $viewurl = new moodle_url('/mod/oublog/view.php', array('id' => $cm->id));
+    if (isset($referurl)) {
+        $viewurl = new moodle_url($referurl);
+    }
 }
 
 if ($email) {
     // Then open and process the form.
     require_once($CFG->dirroot . '/mod/oublog/deletepost_form.php');
     $customdata = (object)array('blog' => $blog, 'post' => $postid,
-            'delete' => $delete, 'email' => $email, 'url' => $viewurl);
+            'delete' => $delete, 'email' => $email, 'referurl' => $viewurl);
     $mform = new mod_oublog_deletepost_form('deletepost.php', $customdata);
     if ($mform->is_cancelled()) {
         // Form is cancelled, redirect back to the blog.
@@ -104,35 +111,40 @@ if ($email) {
         $includepost = (isset($submitted->includepost)) ? true : false;
         $from = $SITE->fullname;
 
-        // Always send HTML version.
+        // Use prefered format for author of the post.
         $user = (object)array(
                 'email' => $post->email,
-                'mailformat' => 1,
+                'mailformat' => $post->mailformat,
                 'id' => $post->userid
         );
 
         $messagehtml = text_to_html($messagetext);
 
-        // Include the copy of the post in the email to the author.
+        // Include the copy of the post in the email.
         if ($includepost) {
             $messagehtml .= $messagepost;
         }
         // Send an email to the author of the post.
-        if (!email_to_user($user, $from, $post->title, '', $messagehtml)) {
+        if (!email_to_user($user, $from, $post->title, html_to_text($messagehtml), $messagehtml)) {
             print_error(get_string('emailerror', 'oublog'));
         }
+
         // Prepare for copies.
-        $emails = $selfmail = array();
+        $emails = array();
         if ($copyself) {
-            $selfmail[] = $USER->email;
+            // Send an email copy to the current user, with prefered format.
+            $subject = strtoupper(get_string('copy')) . ' - '. $post->title;
+            if (!email_to_user($USER, $from, $subject, html_to_text($messagehtml), $messagehtml)) {
+                print_error(get_string('emailerror', 'oublog'));
+            }
         }
+
         // Addition of 'Email address of other recipients'.
         if (!empty($submitted->emailadd)) {
             $emails = preg_split('~[; ]+~', $submitted->emailadd);
         }
-        $emails = array_merge($emails, $selfmail);
 
-        // If there are any recipients listed send them a copy.
+        // If there are any recipients listed send them a HTML copy.
         if (!empty($emails[0])) {
             $subject = strtoupper(get_string('copy')) . ' - '. $post->title;
             foreach ($emails as $email) {
@@ -180,7 +192,7 @@ if ($email) {
 
         $deletebutton = new single_button(new moodle_url('/mod/oublog/deletepost.php',
                 array('blog' => $blog, 'post' => $postid, 'delete' => '1',
-                        'confirm' => '1')), get_string('delete'), 'post');
+                        'confirm' => '1', 'referurl' => $viewurl)), get_string('delete'), 'post');
         $cancelbutton = new single_button($viewurl, get_string('cancel'), 'get');
 
         if ($USER->id == $post->userid) {
@@ -228,6 +240,18 @@ function oublog_do_delete($course, $cm, $oublog, $post) {
         $completion->update_state($cm, COMPLETION_INCOMPLETE, $post->userid);
     }
     $transaction->allow_commit();
+
+    // Log post deleted event.
+    $context = context_module::instance($cm->id);
+    $params = array(
+        'context' => $context,
+        'objectid' => $post->id,
+        'other' => array(
+            'oublogid' => $oublog->id
+        )
+    );
+    $event = \mod_oublog\event\post_deleted::create($params);
+    $event->trigger();
 }
 
 /**

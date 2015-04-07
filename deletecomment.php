@@ -63,18 +63,22 @@ if ($oublog->global) {
     $blogtype = 'personal';
     // Get blog user from the oublog_get_post result (to save making an
     // extra query); this is only used to display their name anyhow
-    $oubloguser = (object)array('id'=>$post->userid,
-        'firstname'=>$post->firstname, 'lastname'=>$post->lastname);
+    $oubloguser = new stdClass();
+    $oubloguser->id = $post->userid;
+    foreach (get_all_user_name_fields() as $field) {
+        $oubloguser->$field = $post->$field;
+    }
 } else {
     $blogtype = 'course';
 }
 $viewurl = new moodle_url('/mod/oublog/viewpost.php', array('post'=>$post->id));
 
 if (!empty($commentid) && !empty($confirm)) {
+    $timedeleted = time();
     $updatecomment = (object)array(
         'id' => $commentid,
         'deletedby' => $USER->id,
-        'timedeleted' => time());
+        'timedeleted' => $timedeleted);
     $DB->update_record('oublog_comments', $updatecomment);
 
     // Inform completion system, if available
@@ -82,6 +86,18 @@ if (!empty($commentid) && !empty($confirm)) {
     if ($completion->is_enabled($cm) && ($oublog->completioncomments)) {
         $completion->update_state($cm, COMPLETION_INCOMPLETE, $comment->userid);
     }
+
+    // Log delete comment event.
+    $params = array(
+        'context' => $context,
+        'objectid' => $comment->id,
+        'other' => array(
+            'oublogid' => $oublog->id,
+            'postid' => $comment->postid,
+        )
+    );
+    $event = \mod_oublog\event\comment_deleted::create($params);
+    $event->trigger();
 
     redirect($viewurl);
     exit;

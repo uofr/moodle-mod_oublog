@@ -204,6 +204,7 @@ have an account on the system, please <a href=\'{$a->link}\'>log in for full acc
 $string['guestblog'] = 'If you have an account on the system, please
 <a href=\'{$a}\'>log in for full access</a>.';
 $string['noposts'] = 'There are no visible posts in this {$a}.';
+$string['nopostsnotags'] = 'There are no visible posts in this {$a->blog}, for this tag {$a->tag}.';
 
 // Errors.
 $string['accessdenied'] = 'Sorry: you do not have access to view this page.';
@@ -406,7 +407,6 @@ $string['commentsby'] = 'Comments by {$a}';
 $string['commentonby'] = 'Comment on post <u>{$a->title}</u> {$a->date} by <u>{$a->author}</u>';
 $string['nouserposts'] = 'No posts made.';
 $string['nousercomments'] = 'No comments made.';
-$string['savegrades'] = 'Save grades';
 $string['gradesupdated'] = 'Grades updated';
 $string['usergrade'] = 'User grade';
 $string['nousergrade'] = 'User grade not available.';
@@ -559,7 +559,7 @@ access the Edit page again and then paste in your changes.</p>';
 $string['order'] = 'Order:';
 $string['alpha'] = 'A to Z';
 $string['use'] = 'Most used';
-$string['order_help'] = 'You can choose to display the list of tags used ordered
+$string['order_help'] = 'You can choose to order the display of the list of tags used,
 either in alphabetical order or by number of posts used in.
 Select the two links to switch between ordering methods,
 this choice is remembered and will be used on subsequent views.';
@@ -580,3 +580,34 @@ $string['commentdated'] = 'Dated';
 $string['postinfoblock'] = '<u>{$a->posttitle}</u> <br> <u>{$a->postdate}</u> <br> <u>{$a->sourcelink}</u>';
 $string['postdetail'] = 'Post detail';
 $string['group'] = 'Group ';
+$string['event:postcreated'] = 'Post created';
+$string['event:commentcreated'] = 'Comment created';
+$string['event:commentdeleted'] = 'Comment deleted';
+$string['event:postdeleted'] = 'Post deleted';
+$string['event:postupdated'] = 'Post updated';
+$string['event:postviewed'] = 'Post viewed';
+$string['event:commentapproved'] = 'Comment approved';
+$string['event:participationviewed'] = 'Participation viewed';
+$string['event:siteentriesviewed'] = 'Site entries viewed';
+$string['event:postimported'] = 'Post imported';
+$string['oublog:rate'] = 'Can rate posts.';
+$string['oublog:viewallratings'] = 'View all raw ratings given by individuals';
+$string['oublog:viewanyrating'] = 'View total ratings that anyone received';
+$string['oublog:viewrating'] = 'View the total rating you received';
+$string['grading'] = 'Grading';
+$string['grading_help'] = 'If you select this option, a grade for this blog will be added
+ to the course gradebook and calculated automatically.
+ Leave this off for a non-assessed blog, or one you plan to assess manually.';
+$string['grading_invalid'] = 'Posts can only be graded when either grade type or rating type are set.';
+$string['nograde'] = 'No grade (default)';
+$string['teachergrading'] = 'Teacher grades students';
+$string['userrating'] = 'Use ratings';
+$string['share'] = 'Share this post';
+$string['tweet'] = 'Tweet';
+$string['oublogcrontask'] = 'OU blog maintenance jobs';
+
+$string['restricttags'] = 'Allow \'Set\' tags only';
+$string['restricttags_help'] = 'If you select this option, you can restrict
+tag entry to only those that are set at activity level.';
+$string['restricttagslist'] = 'You may only enter the \'Set\' tags: {$a}';
+$string['restricttagsvalidation'] = 'Only \'Set\' tags are allowed to be entered';

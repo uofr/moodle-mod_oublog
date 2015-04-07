@@ -42,9 +42,10 @@ class mod_oublog_renderer extends plugin_renderer_base {
     public function render_post($cm, $oublog, $post, $baseurl, $blogtype,
             $canmanageposts = false, $canaudit = false, $commentcount = true,
             $forexport = false, $format = false, $email = false) {
-        global $CFG, $USER;
+        global $CFG, $USER, $OUTPUT;
         $output = '';
         $modcontext = context_module::instance($cm->id);
+        $referurl = $baseurl;
         // Get rid of any existing tag from the URL as we only support one at a time.
         $baseurl = preg_replace('~&amp;tag=[^&]*~', '', $baseurl);
 
@@ -65,6 +66,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
 
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post'. $extraclasses));
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-top'));
+        $output .= html_writer::start_tag('div', array('class' => 'oublog-social-container'));
         $fs = get_file_storage();
         if ($files = $fs->get_area_files($modcontext->id, 'mod_oublog', 'attachment', $post->id,
                 "timemodified", false)) {
@@ -100,6 +102,58 @@ class mod_oublog_renderer extends plugin_renderer_base {
             }
             $output .= html_writer::end_tag('div');
         }
+        // Only show widgets if blog is global ect.
+        if ($oublog->global && $oublog->maxvisibility == OUBLOG_VISIBILITY_PUBLIC) {
+            if ($post->visibility == OUBLOG_VISIBILITY_PUBLIC && !$forexport && !$email) {
+                list($oublog, $oubloginstance) = oublog_get_personal_blog($post->userid);
+                $oubloginstancename = $oubloginstance->name;
+                $linktext = get_string('tweet', 'oublog');
+                $purl = new moodle_url('/mod/oublog/viewpost.php', array('post' => $post->id));
+                $postname = !(empty($post->title)) ? $post->title : get_string('untitledpost', 'oublog');
+                $output .= html_writer::start_tag('div', array('class' => 'oublog-post-socialshares'));
+                $output .= get_string('share', 'oublog');
+                $output .= html_writer::start_tag('div', array('class' => 'oublog-post-share'));
+                // Show tweet link.
+                $output .= html_writer::start_tag('div',
+                        array('class' => 'share-button'));
+                $params = array('url' => $purl, 'dnt' => true, 'count' => 'none',
+                        'text' => $postname . " " . $oubloginstance->name,
+                        'class' => 'twitter-share-button');
+                $turl = new moodle_url('https://twitter.com/share', $params);
+                $output .= html_writer::link($turl, $linktext, $params);
+                $output .= html_writer::end_tag('div');
+                // Show facebook link.
+                $output .= html_writer::start_tag('div',
+                        array('class' => 'share-button'));
+                $output .= html_writer::start_tag('div',
+                        array('class' => 'fb-share-button',
+                        'data-href' => $purl,
+                        'data-colorscheme' => 'dark'));
+                $output .= html_writer::end_tag('div');
+                $output .= html_writer::end_tag('div');
+                // Show googleplus link.
+                $output .= html_writer::start_tag('div',
+                        array('class' => 'share-button'));
+                $output .= html_writer::start_tag('div',
+                        array('class'=>'g-plus',
+                        'data-href' => $purl,
+                        'data-action' => 'share',
+                        'data-height' => 20,
+                        'data-annotation' => 'none'));
+                $output .= html_writer::end_tag('div');
+                $output .= html_writer::end_tag('div');
+
+                $output .= html_writer::end_tag('div');
+                $output .= html_writer::end_tag('div');
+                // With JS enabled show social widget buttons.
+                self::render_twitter_js();
+                $output .= self::render_facebook_js();
+                $output .= self::render_googleplus_js();
+            }
+
+        }
+        $output .= html_writer::end_tag('div');
+
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-top-content'));
         if (!$forexport) {
             $output .= html_writer::start_tag('div', array('class' => 'oublog-userpic'));
@@ -242,13 +296,15 @@ class mod_oublog_renderer extends plugin_renderer_base {
             $output .= html_writer::start_tag('div', array('class' => 'oublog-post-tags')) .
                     $strtags . ': ';
             $tagcounter = 1;
+            // Get rid of page from the URL we dont want it in tags.
+            $pagelessurl = preg_replace('/&page=[^&]*/', '', $baseurl);
             foreach ($post->tags as $taglink) {
                 $taglinktext = $taglink;
                 if ($tagcounter < count($post->tags)) {
                     $taglinktext .= ',';
                 }
                 if (!$forexport && !$email) {
-                    $output .= html_writer::tag('a', $taglinktext, array('href' => $baseurl .
+                    $output .= html_writer::tag('a', $taglinktext, array('href' => $pagelessurl .
                             '&tag=' . urlencode($taglink))) . ' ';
                 } else {
                     $output .= $taglinktext . ' ';
@@ -257,7 +313,12 @@ class mod_oublog_renderer extends plugin_renderer_base {
             }
             $output .= html_writer::end_tag('div');
         }
-
+        if (!$forexport && !$email) {
+            // Output ratings.
+            if (!empty($post->rating)) {
+                $output .= html_writer::div($OUTPUT->render($post->rating), 'oublog-post-rating');
+            }
+        }
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-links'));
         if (!$forexport && !$email) {
             $output .= html_writer::tag('a', $strpermalink, array('href' => $CFG->wwwroot .
@@ -269,18 +330,18 @@ class mod_oublog_renderer extends plugin_renderer_base {
                 if (!$forexport && !$email) {
                     $output .= html_writer::tag('a', $stredit, array('href' => $CFG->wwwroot .
                             '/mod/oublog/editpost.php?blog=' . $post->oublogid .
-                            '&post=' . $post->id)).' ';
+                            '&post=' . $post->id . '&referurl=' . urlencode($referurl))) . ' ';
                     if (($post->userid !== $USER->id)) {
                         // Add email and 'oublog_deleteandemail' to delete link.
                         $output .= html_writer::tag('a', $strdelete, array('href' => $CFG->wwwroot .
                                 '/mod/oublog/deletepost.php?blog=' . $post->oublogid .
-                                '&post=' . $post->id . '&delete=1',
+                                '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl),
                                 'class' => 'oublog_deleteandemail_' . $post->id));
                         self::render_oublog_print_delete_dialog($cm->id, $post->id);
                     } else {
                         $output .= html_writer::tag('a', $strdelete, array('href' => $CFG->wwwroot .
                                 '/mod/oublog/deletepost.php?blog=' . $post->oublogid .
-                                '&post=' . $post->id . '&delete=1'));
+                                '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl)));
                     }
                 }
             }
@@ -1311,7 +1372,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
         $jsmodule = array(
                 'name' => 'mod_oublog.init_deleteandemail',
                 'fullpath' => '/mod/oublog/module.js',
-                'requires' => array('base', 'event', 'node', 'panel', 'anim', 'moodle-core-notification', 'button'),
+                'requires' => array('base', 'event', 'node', 'panel', 'anim', 'moodle-core-notification-dialogue', 'button'),
                 'strings' => $stringlist);
         $PAGE->requires->js_init_call('M.mod_oublog.init_deleteandemail', array($cmid, $postid), true, $jsmodule);
     }
@@ -1341,6 +1402,59 @@ class mod_oublog_renderer extends plugin_renderer_base {
         return $output;
     }
 
+     /**
+     * Renders Twitter widget js code into the page.
+     */
+    public function render_twitter_js() {
+        global $PAGE;
+        static $loaded;
+        if ($loaded || $PAGE->devicetypeinuse == 'legacy') {
+            return;
+        } else {
+            $PAGE->requires->js_init_code("Y.Get.js('https://platform.twitter.com/widgets.js', {async:true})");
+            $loaded = true;
+        }
+    }
+
+    /**
+     * Renders Facebook widget js code into the page.
+     */
+    public function render_facebook_js() {
+        global $PAGE;
+        static $loaded;
+        if ($loaded || $PAGE->devicetypeinuse == 'legacy') {
+            return;
+        } else {
+            $facebookjs = <<<EOF
+<div id="fb-root"></div>
+EOF;
+            $PAGE->requires->js_init_code("Y.Get.js('https://connect.facebook.net/en_GB/sdk.js#xfbml=1&version=v2.0', {async:true})");
+            $loaded = true;
+            return $facebookjs;
+        }
+    }
+
+    /**
+     * Renders Google+ widget js code into the page.
+     */
+    public function render_googleplus_js() {
+        global $PAGE;
+        static $loaded;
+        if ($loaded || $PAGE->devicetypeinuse == 'legacy') {
+            return;
+        } else {
+            $PAGE->requires->js_init_code("Y.Get.js('https://apis.google.com/js/platform.js', {async:true})");
+            $loaded = true;
+            return;
+        }
+    }
+
+    /**
+     * Render socialmedia widgets into the 'summary block'.
+     */
+    public function render_summary($summary, $oubloguser) {
+        return $summary;
+    }
 }
 
 class oublog_statsinfo implements renderable {
