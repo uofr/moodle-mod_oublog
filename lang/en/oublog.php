@@ -69,6 +69,8 @@ $string['yes'] = 'Yes';
 $string['no'] = 'No';
 $string['blogname'] = 'Blog name';
 $string['summary'] = 'Summary';
+$string['showblocks'] = 'Show side blocks';
+$string['showblocks_help'] = 'Enable extra blocks in the display, (Intro, Tags, Blog Usage, Feeds, etc.)';
 $string['statblockon'] = 'Show blog usage extra statistics';
 $string['statblockon_help'] = 'Enable extra statistics display in the Blog usage \'block\'.
 Personal (global), Visible Individual and Visible Group blogs only.';

@@ -93,7 +93,11 @@ class mod_oublog_mod_form extends moodleform_mod {
                     get_string('maxattachments', 'oublog'), $choices);
             $mform->addHelpButton('maxattachments', 'maxattachments', 'oublog');
             $mform->setDefault('maxattachments', $modulesettings->maxattachments);
-
+            
+            // Enable the blocks?
+            $mform->addElement('checkbox', 'showblocks', get_string('showblocks', 'oublog'), '', 1);
+            $mform->addHelpButton('showblocks', 'showblocks', 'oublog');
+            
             // Enable the stats block.
             $mform->addElement('checkbox', 'statblockon', get_string('statblockon', 'oublog'), '', 0);
             $mform->addHelpButton('statblockon', 'statblockon', 'oublog');

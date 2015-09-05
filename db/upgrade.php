@@ -339,6 +339,19 @@ function xmldb_oublog_upgrade($oldversion=0) {
         // OUblog savepoint reached.
         upgrade_mod_savepoint(true, 2014122400, 'oublog');
     }
+    
+    if ($oldversion < 2015070700) {
 
+        // Define field showblocks to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('showblocks', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'displayname');
+
+        // Conditionally launch add field showblocks.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2015070700, 'oublog');
+    }
+    
     return true;
 }
