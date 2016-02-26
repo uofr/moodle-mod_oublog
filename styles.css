@@ -699,3 +699,8 @@ div.tagselector_result .tagselector_result_info {
 .oublog-tag-order {
     margin-bottom: .5em;
 }
+
+.oublog-post-content img {
+    height: auto;
+    max-width: 100%;
+}
