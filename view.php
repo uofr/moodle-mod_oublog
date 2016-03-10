@@ -298,6 +298,7 @@ if (!$hideunusedblog) {
         $bc = new block_contents();
         $bc->attributes['id'] = 'oublog-tags';
         $bc->attributes['class'] = 'oublog-sideblock block';
+        $bc->attributes['data-osepid'] = $id . '_oublog_blocktags';
         $bc->title = $strtags;
         $bc->content = $oublogoutput->render_tag_order($tagorder);
         $bc->content .= $tags;
@@ -310,6 +311,7 @@ if (!$hideunusedblog) {
         $bc = new block_contents();
         $bc->attributes['id'] = 'oublog-links';
         $bc->attributes['class'] = 'oublog-sideblock block';
+        $bc->attributes['data-osepid'] = $id . '_oublog_blocklinks';
         $bc->title = $strlinks;
         $bc->content = $links;
         $PAGE->blocks->add_fake_block($bc, BLOCK_POS_RIGHT);
@@ -332,6 +334,7 @@ if (!$hideunusedblog) {
         $bc = new block_contents();
         $bc->attributes['id'] = 'oublog-discover';
         $bc->attributes['class'] = 'oublog-sideblock block';
+        $bc->attributes['data-osepid'] = $id . '_oublog_blockdiscovery';
         $bc->title = get_string('discovery', 'oublog', oublog_get_displayname($oublog, true));
         $bc->content = $stats;
         $PAGE->blocks->add_fake_block($bc, BLOCK_POS_RIGHT);
@@ -341,12 +344,53 @@ if (!$hideunusedblog) {
     if ($feeds = oublog_get_feedblock($oublog, $oubloginstance, $currentgroup, false, $cm, $currentindividual)) {
         $feedicon = ' <img src="'.$OUTPUT->pix_url('i/rss').'" alt="'.get_string('blogfeed', 'oublog').'"  class="feedicon" />';
         $bc = new block_contents();
+        $bc->attributes['id'] = 'oublog-feeds';
         $bc->attributes['class'] = 'oublog-sideblock block';
+        $bc->attributes['data-osepid'] = $id . '_oublog_blockfeeds';
         $bc->title = $strfeeds;
         $bc->content = $feeds;
         $PAGE->blocks->add_fake_block($bc, BLOCK_POS_RIGHT);
     }
 }
+
+// Show portfolio export link.
+// Will need to be passed enough details on the blog so it can accurately work out what
+// posts are displayed (as oublog_get_posts above).
+if (!empty($CFG->enableportfolios) && (has_capability('mod/oublog:exportpost', $context))) {
+    require_once($CFG->libdir . '/portfoliolib.php');
+
+    if ($canaudit) {
+        $canaudit = 1;
+    } else {
+        $canaudit = 0;
+    }
+    if (empty($oubloguser->id)) {
+        $oubloguserid = 0;
+    } else {
+        $oubloguserid = $oubloguser->id;
+    }
+    $tagid = null;
+    if (!is_null($tag)) {
+        // Make tag work with portfolio param cleaning by looking up id.
+        if ($tagrec = $DB->get_record('oublog_tags', array('tag' => $tag), 'id')) {
+            $tagid = $tagrec->id;
+        }
+    }
+
+    // Note: render_export_button_top and render_export_button_bottom are added to
+    // support the OSEP design which includes the export button differently from the old OU theme.
+    if ($posts) {
+        // Do this to get $post variable
+        foreach ($posts as $post) {
+        }
+
+        if (isset($posts)) {
+            $oublogoutput->render_export_button_top($context, $oublog, $post, $oubloguserid,
+                    $canaudit, $offset, $currentgroup, $currentindividual, $tagid, $cm, $course->id);
+        }
+    }
+}
+
 // Must be called after add_fake_blocks.
 echo $OUTPUT->header();
 
@@ -354,6 +398,8 @@ echo $OUTPUT->header();
 print '<div id="middle-column" class="has-right-column">';
 
 echo $OUTPUT->skip_link_target();
+
+echo $oublogoutput->render_header($cm, $oublog, 'view');
 
 // Print Groups and individual drop-down menu.
 echo '<div class="oublog-groups-individual-selectors">';
@@ -371,13 +417,12 @@ if ($oublog->individual) {
     }
 }
 echo '</div>';
+
 if (!$hideunusedblog) {
     // Renderer hook so extra info can be added to global blog pages in theme.
     echo $oublogoutput->render_viewpage_prepost();
 }
 // Print the main part of the page.
-
-echo '<div id="oublogbuttons">';
 
 // New post button - in group blog, you can only post if a group is selected.
 if ($oublog->individual && $individualdetails) {
@@ -385,7 +430,52 @@ if ($oublog->individual && $individualdetails) {
 } else {
     $showpostbutton = $canpost && ($currentgroup || !$groupmode );
 }
-if ($showpostbutton) {
+
+// If timed blog posts show info.
+$capable = has_capability('mod/oublog:ignorepostperiod',
+        $oublog->global ? context_system::instance() : $context);
+
+if (($showpostbutton || $capable) && $oublog->postfrom != 0 && $oublog->postfrom > time()) {
+    echo $oublogoutput->render_time_limit_msg('beforestartpost', $oublog->postfrom, $capable);
+}
+if (($showpostbutton || $capable) && $oublog->postuntil != 0) {
+    if ($oublog->postuntil > time()) {
+        echo $oublogoutput->render_time_limit_msg('beforeendpost', $oublog->postuntil, $capable);
+    } else {
+        echo $oublogoutput->render_time_limit_msg('afterendpost', $oublog->postuntil, $capable);
+    }
+}
+// If timed comments show info.
+if ($posts) {
+    $maxpost = (object) array('allowcomments' => false, 'visibility' => OUBLOG_VISIBILITY_COURSEUSER);
+    foreach ($posts as $apost) {
+        // Work out if any posts on page allow commenting + max visibility.
+        if ($apost->allowcomments) {
+            $maxpost->allowcomments = true;
+        }
+        if ($apost->visibility > $maxpost->visibility) {
+            $maxpost->visibility = $apost->visibility;
+        }
+    }
+    if (oublog_can_comment($cm, $oublog, $maxpost, true)) {
+        $ccapable = has_capability('mod/oublog:ignorecommentperiod',
+                $oublog->global ? context_system::instance() : $context);
+        if ($oublog->commentfrom != 0 && $oublog->commentfrom > time()) {
+            echo $oublogoutput->render_time_limit_msg('beforestartcomment', $oublog->commentfrom, $capable, 'comment');
+        }
+        if ($oublog->commentuntil != 0) {
+            if ($oublog->commentuntil > time()) {
+                echo $oublogoutput->render_time_limit_msg('beforeendcomment', $oublog->commentuntil, $capable, 'comment');
+            } else {
+                echo $oublogoutput->render_time_limit_msg('afterendcomment', $oublog->commentuntil, $capable, 'comment');
+            }
+        }
+    }
+}
+
+echo '<div id="oublogbuttons">';
+
+if ($showpostbutton && oublog_can_post_now($oublog, $context)) {
     echo '<div id="addpostbutton">';
     echo $OUTPUT->single_button(new moodle_url('/mod/oublog/editpost.php', array('blog' =>
             $cm->instance)), $straddpost, 'get');
@@ -432,43 +522,14 @@ if ($posts) {
     echo "<div class='oublog-paging'>";
     echo $OUTPUT->paging_bar($recordcount, $page, OUBLOG_POSTS_PER_PAGE, $returnurl);
     echo '</div></div>';
-    echo '<div id="addexportpostsbutton">';
+
     // Show portfolio export link.
     // Will need to be passed enough details on the blog so it can accurately work out what
     // posts are displayed (as oublog_get_posts above).
-    if (!empty($CFG->enableportfolios) &&
-            (has_capability('mod/oublog:exportpost', $context))) {
-        require_once($CFG->libdir . '/portfoliolib.php');
-        if ($canaudit) {
-            $canaudit = 1;
-        } else {
-            $canaudit = 0;
-        }
-        if (empty($oubloguser->id)) {
-            $oubloguser->id = 0;
-        }
-        $tagid = null;
-        if (!is_null($tag)) {
-            // Make tag work with portfolio param cleaning by looking up id.
-            if ($tagrec = $DB->get_record('oublog_tags', array('tag' => $tag), 'id')) {
-                $tagid = $tagrec->id;
-            }
-        }
-        $button = new portfolio_add_button();
-        $button->set_callback_options('oublog_all_portfolio_caller',
-                array('postid' => $post->id,
-                        'oublogid' => $oublog->id,
-                        'offset' => $offset,
-                        'currentgroup' => $currentgroup,
-                        'currentindividual' => $currentindividual,
-                        'oubloguserid' => $oubloguser->id,
-                        'canaudit' => $canaudit,
-                        'tag' =>  $tagid,
-                        'cmid' => $cm->id, ), 'mod_oublog');
-        echo $button->to_html(PORTFOLIO_ADD_TEXT_LINK) .
-        get_string('exportpostscomments', 'oublog');
+    if (!empty($CFG->enableportfolios) && (has_capability('mod/oublog:exportpost', $context))) {
+        echo $oublogoutput->render_export_button_bottom($context, $oublog, $post, $oubloguserid,
+                $canaudit, $offset, $currentgroup, $currentindividual, $tagid, $cm);
     }
-    echo '</div>';
 }
 // Print information allowing the user to log in if necessary, or letting
 // them know if there are no posts in the blog.
@@ -504,6 +565,8 @@ $event->trigger();
 $views = oublog_update_views($oublog, $oubloginstance);
 
 // Finish the page.
-echo "<div class=\"clearer\"></div><div class=\"oublog-views\">$strviews $views</div></div>";
+if (isloggedin() || isguestuser()) {
+    echo "<div class=\"clearer\"></div><div class=\"oublog-views\">$strviews $views</div></div>";
+}
 
 echo $OUTPUT->footer();

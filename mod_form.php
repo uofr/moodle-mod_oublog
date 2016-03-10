@@ -45,7 +45,7 @@ class mod_oublog_mod_form extends moodleform_mod {
         $mform->addRule('name', null, 'required', null, 'client');
 
         if (!defined('OUBLOG_EDIT_INSTANCE')) {
-            $this->add_intro_editor(false, get_string('oublogintro', 'oublog'));
+            $this->standard_intro_elements(get_string('oublogintro', 'oublog'));
             // Adding the "allowcomments" field.
             $options = array(OUBLOG_COMMENTS_ALLOW => get_string('logincomments', 'oublog'),
                     OUBLOG_COMMENTS_ALLOWPUBLIC => get_string('publiccomments', 'oublog'),
@@ -94,10 +94,6 @@ class mod_oublog_mod_form extends moodleform_mod {
             $mform->addHelpButton('maxattachments', 'maxattachments', 'oublog');
             $mform->setDefault('maxattachments', $modulesettings->maxattachments);
 
-            // Enable the stats block.
-            $mform->addElement('checkbox', 'statblockon', get_string('statblockon', 'oublog'), '', 0);
-            $mform->addHelpButton('statblockon', 'statblockon', 'oublog');
-
             // Show OU Alerts reporting link.
             if (oublog_oualerts_enabled()) {
                 $mform->addElement('text', 'reportingemail', get_string('reportingemail', 'oublog'),
@@ -107,6 +103,12 @@ class mod_oublog_mod_form extends moodleform_mod {
                 $mform->addRule('reportingemail', get_string('maximumchars', '', 255),
                         'maxlength', 255, 'client');
             }
+
+            $mform->addElement('header', 'advanced', get_string('advancedoptions', 'oublog'));
+
+            // Enable the stats block.
+            $mform->addElement('checkbox', 'statblockon', get_string('statblockon', 'oublog'), '', 0);
+            $mform->addHelpButton('statblockon', 'statblockon', 'oublog');
 
             $mform->addElement('text', 'displayname', get_string('displayname', 'oublog'),
                     array('size'=>'48'));
@@ -118,6 +120,8 @@ class mod_oublog_mod_form extends moodleform_mod {
             $mform->addElement('checkbox', 'allowimport', get_string('allowimport', 'oublog'), '', 0);
             $mform->addHelpButton('allowimport', 'allowimport', 'oublog');
 
+            $mform->addElement('header', 'tagheading', get_string('tags', 'oublog'));
+
             $mform->addElement('text', 'tags', get_string('tags', 'oublog'),
                             array('size'=>'48'));
             $mform->addHelpButton('tags', 'predefinedtags', 'oublog');
@@ -125,10 +129,29 @@ class mod_oublog_mod_form extends moodleform_mod {
             $mform->addRule('tags', get_string('maximumchars', '', 255),
                             'maxlength', 255, 'client');
 
-            $mform->addElement('checkbox', 'restricttags', get_string('restricttags', 'oublog'), '', 0);
+            $tagopts = array(
+                    '0' => get_string('none'),
+                    '1' => get_string('restricttags_set', 'oublog'),
+                    '2' => get_string('restricttags_req', 'oublog'),
+                    '3' => get_string('restricttags_req_set', 'oublog'),
+            );
+            $mform->addElement('select', 'restricttags', get_string('restricttags', 'oublog'), $tagopts);
             $mform->addHelpButton('restricttags', 'restricttags', 'oublog');
-            // Must have tags for restriction.
-            $mform->disabledIf('restricttags', 'tags', 'eq', '');
+
+            $mform->addElement('header', 'limits', get_string('limits', 'oublog'));
+
+            // Limiting post/comments dates.
+            $mform->addElement('date_time_selector', 'postfrom',
+                    get_string('postfrom', 'oublog'), array('optional' => true));
+            $mform->addElement('date_time_selector', 'postuntil',
+                    get_string('postuntil', 'oublog'), array('optional' => true));
+            $mform->addElement('date_time_selector', 'commentfrom',
+                    get_string('commentfrom', 'oublog'), array('optional' => true));
+            $mform->addElement('date_time_selector', 'commentuntil',
+                    get_string('commentuntil', 'oublog'), array('optional' => true));
+
+            $mform->disabledIf('commentfrom', 'allowcomments', 'eq', 0);
+            $mform->disabledIf('commentuntil', 'allowcomments', 'eq', 0);
 
             $mform->addElement('header', 'modstandardgrade', get_string('grade'));
             // Adding the "grading" field.
@@ -233,6 +256,18 @@ class mod_oublog_mod_form extends moodleform_mod {
         if (empty($data->restricttags)) {
             $data->restricttags = 0;
         }
+        if (empty($data->postfrom)) {
+            $data->postfrom = 0;
+        }
+        if (empty($data->postuntil)) {
+            $data->postuntil = 0;
+        }
+        if (empty($data->commentfrom)) {
+            $data->commentfrom = 0;
+        }
+        if (empty($data->commentuntil)) {
+            $data->commentuntil = 0;
+        }
         return $data;
     }
 
@@ -283,6 +318,11 @@ class mod_oublog_mod_form extends moodleform_mod {
                     ($data['grading'] == OUBLOG_USE_RATING && empty($data['assessed']))) {
                 $errors['grading'] = get_string('grading_invalid', 'oublog');
             }
+        }
+        if (isset($data['restricttags']) && empty($data['tags'])
+                && ($data['restricttags'] == 1 || $data['restricttags'] == 3)) {
+            // When forcing use of pre-defined tags must define some.
+            $errors['tags'] = get_string('required');
         }
         return $errors;
     }
