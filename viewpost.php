@@ -116,7 +116,7 @@ if ($groupmode==VISIBLEGROUPS && !groups_is_member($post->groupid) &&
 }
 
 // Print the header.
-
+$strblogsearch = get_string('searchthisblog', 'oublog', oublog_get_displayname($oublog));
 if ($oublog->global) {
     $blogtype = 'personal';
     $returnurl = 'view.php?user=' . $oubloginstance->userid;
@@ -132,12 +132,13 @@ if ($oublog->global) {
             array('user' => $oubloginstance->userid)));
 
     $url = new moodle_url("$CFG->wwwroot/course/mod.php", array('update' => $cm->id, 'return' => true, 'sesskey' => sesskey()));
-
+    $buttontext = oublog_get_search_form('user', $oubloguser->id, $strblogsearch);
 } else {
     $blogtype = 'course';
     $returnurl = 'view.php?id='.$cm->id;
     $blogname = $oublog->name;
     $url = new moodle_url("$CFG->wwwroot/course/mod.php", array('update' => $cm->id, 'return' => true, 'sesskey' => sesskey()));
+    $buttontext = oublog_get_search_form('id', $cm->id, $strblogsearch);
 }
 
 // Log view post event.
@@ -155,6 +156,7 @@ $event->trigger();
 $CFG->additionalhtmlhead .= oublog_get_meta_tags($oublog, $oubloginstance, $currentgroup, $cm, $post);
 $PAGE->set_title(format_string($post->title));
 $PAGE->set_heading(format_string($course->fullname));
+$PAGE->set_button($buttontext);
 oublog_get_post_extranav($post, false);
 echo $OUTPUT->header();
 // Print the main part of the page.
@@ -239,8 +241,8 @@ if ($post->allowcomments >= OUBLOG_COMMENTS_ALLOWPUBLIC &&
 
             // Title.
             if (trim(format_string($comment->title))!=='') {
-                print '<h2 class="oublog-comment-title">' .
-                        format_string($comment->title) . '</h2>';
+                print '<h3 class="oublog-comment-title">' .
+                        format_string($comment->title) . '</h3>';
             }
 
             // Date and author.
@@ -284,6 +286,12 @@ if ($post->allowcomments >= OUBLOG_COMMENTS_ALLOWPUBLIC &&
 
 
 echo '</div>';
+
+if ($oublog->global) {
+    echo $oublogoutput->get_link_back_to_oublog($blogname, $oubloginstance->userid, true);
+} else {
+    echo $oublogoutput->get_link_back_to_oublog($blogname, $cm->id);
+}
 
 // Finish the page.
 echo '<div class="clearfix"></div>';

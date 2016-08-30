@@ -119,14 +119,14 @@ class mod_oublog_renderer extends plugin_renderer_base {
         }
         if ($socialshareposition == 'top') {
             $output .= $this->render_post_socialshares($cm, $oublog, $post, $baseurl, $blogtype,
-                    $canmanageposts, $canaudit, $commentcount, $forexport, $format = false, $email);
+                    $canmanageposts, $canaudit, $commentcount, $forexport, $format, $email);
         }
         $output .= html_writer::end_tag('div');
 
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-top-content'));
         if (!$forexport) {
             $output .= html_writer::start_tag('div', array('class' => 'oublog-userpic'));
-            $postuser = new object();
+            $postuser = new stdClass();
             $postuser->id = $post->userid;
             $postuser->firstname = $post->firstname;
             $postuser->lastname = $post->lastname;
@@ -312,6 +312,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                                 '/mod/oublog/deletepost.php?blog=' . $post->oublogid .
                                 '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl)));
                     }
+                    $output .= ' ';
                 }
             }
             // Show portfolio export link.
@@ -387,7 +388,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                             $a->fullname = s($last->authorname);
                         }
                         $a->timeposted = oublog_date($last->timeposted, true);
-                        $output .= html_writer::tag('span', ' ' . get_string('lastcomment', 'oublog', $a));
+                        $output .= html_writer::tag('span', ' ' . get_string('lastcomment', 'oublog', $a), array('class' => 'oublog_links_comment'));
                     }
                 } else if (oublog_can_comment($cm, $oublog, $post)) {
                     if (!$forexport && !$email) {
@@ -404,7 +405,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
 
         if ($socialshareposition == 'bottom') {
             $output .= $this->render_post_socialshares($cm, $oublog, $post, $baseurl, $blogtype,
-                    $canmanageposts, $canaudit, $commentcount, $forexport, $format = false, $email);
+                    $canmanageposts, $canaudit, $commentcount, $forexport, $format, $email);
         }
 
         $output .= html_writer::tag('div', '', array('style' => 'clear: both'));
@@ -600,7 +601,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     }
 
                     // Grades.
-                    if ($oublog->grade != 0 && isset($user->gradeobj)) {
+                    if ($oublog->grading != OUBLOG_NO_GRADING && isset($user->gradeobj)) {
                         if (!$table->is_downloading()) {
                             $attributes = array('userid' => $user->id);
                             if (empty($user->gradeobj->grade)) {
@@ -639,7 +640,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
         $table->finish_output();
         if (!$table->is_downloading()) {
             // Print the grade form footer if necessary.
-            if ($oublog->grade != 0 && !empty($participation)) {
+            if ($oublog->grading != OUBLOG_NO_GRADING && !empty($participation)) {
                 echo $table->grade_form_footer();
             }
         }
@@ -930,10 +931,12 @@ class mod_oublog_renderer extends plugin_renderer_base {
      * @param bool $canaudit Has capability toggle
      * @param bool $forexport Export output rendering toggle
      * @param object $cm Current course module object
+     * @param string $format
+     * @param boolean $contenttitle True to position title with content
      * @return html
      */
     public function render_comments($post, $oublog, $canaudit, $canmanagecomments, $forexport,
-            $cm, $format = false) {
+            $cm, $format = false, $contenttitle = false) {
         global $DB, $CFG, $USER, $OUTPUT;
         $viewfullnames = true;
         $strdelete      = get_string('delete', 'oublog');
@@ -945,12 +948,22 @@ class mod_oublog_renderer extends plugin_renderer_base {
             $canmanagecomments = has_capability('mod/oublog:managecomments', $context);
         }
 
+        // IE needs tabindex="-1" or focus ends up in the wrong place when you
+        // follow a link like .../mod/oublog/viewpost.php?post=123#oublogcomments.
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-comments',
-                'id' => 'oublogcomments'));
+                'id' => 'oublogcomments', 'tabindex' => '-1'));
         $counter = 0;
         foreach ($post->comments as $comment) {
             $extraclasses = $comment->deletedby ? ' oublog-deleted' : '';
             $extraclasses .= ' oublog-hasuserpic';
+            $title = '';
+            if (trim(format_string($comment->title))!=='') {
+                $title = html_writer::tag('h3', format_string($comment->title),
+                        array('class' => 'oublog-title'));
+            } else if (!$forexport) {
+                $commenttitle = get_accesshide(get_string('newcomment', 'mod_oublog'));
+                $title = html_writer::tag('h3', $commenttitle, array('class' => 'oublog-title'));
+            }
 
             $output .= html_writer::start_tag('div', array('class' =>
                     'oublog-comment' . $extraclasses, 'id' => 'cid' . $comment->id));
@@ -973,9 +986,10 @@ class mod_oublog_renderer extends plugin_renderer_base {
                 $output .= html_writer::tag('div', get_string('deletedby', 'oublog', $a),
                         array('class' => 'oublog-comment-deletedby'));
             }
+            $output .= html_writer::start_div('oublog-comment-details');
             if ($comment->userid && !$forexport) {
                 $output .= html_writer::start_tag('div', array('class' => 'oublog-userpic'));
-                $commentuser = new object();
+                $commentuser = new stdClass();
                 $fields = explode(',', user_picture::fields());
                 foreach($fields as $field) {
                     if ($field != 'id') {
@@ -988,12 +1002,8 @@ class mod_oublog_renderer extends plugin_renderer_base {
                         array('courseid' => $oublog->course, 'size' => 70));
                 $output .= html_writer::end_tag('div');
             }
-            if (trim(format_string($comment->title))!=='') {
-                $output .= html_writer::tag('h2', format_string($comment->title),
-                        array('class' => 'oublog-title'));
-            } else if (!$forexport) {
-                $commenttitle = get_accesshide(get_string('newcomment', 'mod_oublog'));
-                $output .= html_writer::tag('h2', $commenttitle, array('class' => 'oublog-title'));
+            if (!$contenttitle) {
+                $output .= $title;
             }
             $output .= html_writer::start_tag('div', array('class' => 'oublog-post-date'));
             $output .= oublog_date($comment->timeposted);
@@ -1020,8 +1030,12 @@ class mod_oublog_renderer extends plugin_renderer_base {
             }
             $output .= html_writer::end_tag('div');
             $output .= html_writer::end_tag('div');
+            $output .= html_writer::end_div();
             $output .= html_writer::start_tag('div',
                     array('class' => 'oublog-comment-content'));
+            if ($contenttitle) {
+                $output .= $title;
+            }
             if (!$forexport) {
                 if ($post->visibility == OUBLOG_VISIBILITY_PUBLIC) {
                     $fileurlbase = 'mod/oublog/pluginfile.php';
@@ -1142,7 +1156,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
             $poststable->data = array();
             foreach ($participation->posts as $post) {
                 // Post user object required for user_picture.
-                $postuser = new object();
+                $postuser = new stdClass();
                 $postuser->id = $post->userid;
                 $fields = explode(',', user_picture::fields('', null, '', 'poster'));
                 foreach ($fields as $field) {
@@ -1415,14 +1429,14 @@ class mod_oublog_renderer extends plugin_renderer_base {
         // Get the avatar picture for user/group.
         if (isset($info->user->courseid)) {
             // Group not user.
-            if (!$userpic = print_group_picture($info->user, $info->user->courseid, true, true, false)) {
+            if (!$userpic = print_group_picture($info->user, $info->user->courseid, true, true, true)) {
                 // No group pic set, use default user image.
                 $userpic = $OUTPUT->pix_icon('u/f2', '');
             }
         } else {
-            $userpic = $this->output->user_picture($info->user, array('courseid' => $COURSE->id, 'link' => false));
+            $userpic = $this->output->user_picture($info->user, array('courseid' => $COURSE->id, 'link' => true));
         }
-        $avatar = html_writer::link($info->url, $userpic, array('class' => 'oublog_statsinfo_avatar'));
+        $avatar = html_writer::span($userpic, 'oublog_statsinfo_avatar');
         $infodiv = html_writer::start_div('oublog_statsinfo_infocol');
         if ($info->stat) {
             $infodiv .= html_writer::start_div('oublog_statsinfo_bar');
@@ -1562,6 +1576,24 @@ EOF;
 
         return $output;
     }
+
+    /**
+     * Return a button-like link which takes the user back to the main page.
+     *
+     * @param string $label, String.
+     * @param int $id, cmid or userid (if blog is global).
+     * @param bool $global, set to true when global blog.
+     * @return string
+     */
+    public function get_link_back_to_oublog($label, $id, $global = false) {
+        $idstring = 'id';
+        if ($global) {
+            $idstring = 'user';
+        }
+        $url = new moodle_url('/mod/oublog/view.php', array($idstring => $id));
+        return html_writer::tag('div', link_arrow_left($label, $url), array('id' => 'oublog-arrowback'));
+    }
+
 }
 
 class oublog_statsinfo implements renderable {

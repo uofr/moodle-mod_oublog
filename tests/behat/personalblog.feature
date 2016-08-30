@@ -351,18 +351,42 @@ Feature: Test Post and Comment on Personal OUBlog
     Then I should see "SC02 Personal OUBlog post02"
     And I should see "SC02 Admin Persblog post02 content WorldVis"
     And I should see "sc02edap02"
-    And I should see "Share this post"
-    And I should see "Tweet"
-    And I should see "Share"
-
+    # Changed below to make more specific.
+    And I should see "Share post" in the "div.oublog-post-share-title" "css_element"
+    And I should see "Tweet" in the "div.share-button:nth-child(1)" "css_element"
+    And "div.share-button:nth-child(2) div.fb-share-button" "css_element" should exist
+    And "div.share-button:nth-child(3)" "css_element" should exist
     # Admin opens viewpost page and Socialmedia widgets are available
     And I click on "Permalink" "link" in the ".oublog-post-links" "css_element"
     And I wait to be redirected
     Then I should see "SC02 Personal OUBlog post02"
     And I should see "SC02 Admin Persblog post02 content WorldVis"
     And I should see "sc02edap02"
-    And I should see "Share this post"
-    And I should see "Tweet"
-    And I should see "Share"
+    And I should see "Share post" in the "div.oublog-post-share-title" "css_element"
+    And I should see "Tweet" in the "div.share-button:nth-child(1)" "css_element"
+    And "div.share-button:nth-child(2) div.fb-share-button" "css_element" should exist
+    And "div.share-button:nth-child(3)" "css_element" should exist
     And I should not see "SC02 Personal OUBlog post01"
     And I should not see "SC02 Admin Persblog post01 content Private"
+
+  Scenario: Admin follows the link to the main page and back
+    Given I log in as "admin"
+    And I am on homepage
+    And I follow "Personal Blogs"
+    And I follow "Blog options"
+    Then I should see "Blog name"
+    And I should see "Summary"
+    And I set the following fields to these values:
+      | Blog name| Admin User's blog follow the link to the main page |
+    When I press "Save changes"
+    Then I should see "Admin User's blog follow the link to the main page"
+    Given I press "New blog post"
+    And I set the following fields to these values:
+      | Title | Personal OUBlog post01 |
+      | Message | Admin Persblog post01 content |
+    When I press "Add post"
+    And I follow "Permalink"
+    Then "#oublog-arrowback" "css_element" should exist
+    And I should see "Admin User's blog follow the link to the main page" in the "#oublog-arrowback" "css_element"
+    Given I click on "#oublog-arrowback a" "css_element"
+    Then "#addpostbutton" "css_element" should exist

@@ -227,6 +227,9 @@ div.oublog-deleted .oublog-post-content {
 #oublogcomments {
     padding: 1em;
 }
+#oublogcomments:focus {
+    outline: 0;
+}
 #oublogcomments.oublogpartcomments {
     background-color: #F2F2F2;
 }
@@ -249,7 +252,7 @@ div.oublog-deleted .oublog-post-content {
     margin-right: 10px;
     margin-bottom: 1em;
 }
-.oublog-comment h2.oublog-title {
+.oublog-comment h3.oublog-title {
     margin: 0 0 0.5em 0;
     font-weight: normal;
 }
@@ -709,6 +712,9 @@ div.tagselector_result .tagselector_result_info {
 .oubloglmt {
     font-size: 0.8em;
     margin-left: 5px;
+}
+#oublog-arrowback {
+    margin: 1em 0;
 }
 
 .oublog-post-content img {
