@@ -108,11 +108,11 @@ $groupmode = oublog_get_activity_groupmode($cm, $course);
 $currentgroup = oublog_get_activity_group($cm, true);
 
 // Check permissions for group (of post).
-if ($groupmode==VISIBLEGROUPS && !groups_is_member($post->groupid) &&
+if ($groupmode == VISIBLEGROUPS && !groups_is_member($post->groupid) &&
         !has_capability('moodle/site:accessallgroups', $context)) {
-    $canpost=false;
-    $canmanageposts=false;
-    $canaudit=false;
+    $canpost = false;
+    $canmanageposts = false;
+    $canaudit = false;
 }
 
 // Print the header.
@@ -158,6 +158,9 @@ $PAGE->set_title(format_string($post->title));
 $PAGE->set_heading(format_string($course->fullname));
 $PAGE->set_button($buttontext);
 oublog_get_post_extranav($post, false);
+
+$oublogoutput->pre_display($cm, $oublog, 'viewpost');
+
 echo $OUTPUT->header();
 // Print the main part of the page.
 echo '<div class="oublog-topofpage"></div>';
@@ -228,19 +231,19 @@ if ($post->allowcomments >= OUBLOG_COMMENTS_ALLOWPUBLIC &&
             $extraclasses = '';
             $extramessage = '';
             if ($comment->approval == OUBLOG_MODERATED_REJECTED) {
-                $extraclasses='oublog-rejected';
+                $extraclasses = 'oublog-rejected';
                 $extramessage = '<div class="oublog-rejected-info">' .
                         get_string('moderated_rejectedon', 'oublog',
                             oublog_date($comment->timeset)) . ' </div>';
             }
-            $extraclasses.=' oublog-hasuserpic';
+            $extraclasses .= ' oublog-hasuserpic';
 
             // Start of comment.
             print '<div class="oublog-comment ' . $extraclasses . '">' .
                     $extramessage;
 
             // Title.
-            if (trim(format_string($comment->title))!=='') {
+            if (trim(format_string($comment->title)) !== '') {
                 print '<h3 class="oublog-comment-title">' .
                         format_string($comment->title) . '</h3>';
             }

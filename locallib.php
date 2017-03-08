@@ -1081,7 +1081,7 @@ function oublog_get_tag_list($oublog, $groupid, $cm, $oubloginstanceid = null, $
 
     $tags = oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid, $individualid, 'alpha');
 
-    $blogtags = oublog_clarify_tags($oublog->tags);
+    $blogtags = oublog_clarify_tags($oublog->tagslist);
 
     // For each tag added to the blog check if it is already in use
     // in the post, if it is then the 'Official' label is added to it.
@@ -3223,8 +3223,8 @@ function oublog_get_user_participation($oublog, $context,
             FROM {oublog_instances}
             WHERE oublogid = :oublogid AND userid = :userid
         )
-        AND timedeleted IS NULL ' . $groupcheck . $period . '
-        ORDER BY timeposted DESC';
+        AND timedeleted IS NULL ' . $groupcheck . $period;
+    $postsqlorder = ' ORDER BY timeposted DESC';
 
     if ($start) {
         $cperiod = 'AND c.timeposted > :timestart ';
@@ -3243,9 +3243,8 @@ function oublog_get_user_participation($oublog, $context,
             INNER JOIN {user} pa on bi.userid = pa.id
         WHERE bi.oublogid = :oublogid AND a.id = bi.userid
         AND p.timedeleted IS NULL ' . $groupcheck . $cperiod . '
-        AND c.userid = :userid AND c.timedeleted IS NULL
-            ORDER BY c.timeposted DESC';
-
+        AND c.userid = :userid AND c.timedeleted IS NULL';
+    $commentsqlorder = ' ORDER BY c.timeposted DESC';
     $params = array(
         'oublogid' => $oublog->id,
         'userid' => $userid,
@@ -3261,13 +3260,13 @@ function oublog_get_user_participation($oublog, $context,
     $participation->user = $user;
     $participation->numposts = $DB->get_field_sql("SELECT COUNT(1) FROM ($postssql) as p", $params);
     if ($getposts) {
-        $participation->posts = $DB->get_records_sql($postssql, $params, $limitfrom, $limitnum);
+        $participation->posts = $DB->get_records_sql($postssql . $postsqlorder, $params, $limitfrom, $limitnum);
     } else {
         $participation->posts = array();
     }
     $participation->numcomments = $DB->get_field_sql("SELECT COUNT(1) FROM ($commentssql) as p", $params);
     if ($getcomments) {
-        $participation->comments = $DB->get_records_sql($commentssql, $params, $limitfrom, $limitnum);
+        $participation->comments = $DB->get_records_sql($commentssql . $commentsqlorder, $params, $limitfrom, $limitnum);
     } else {
         $participation->comments = array();
     }
@@ -4465,8 +4464,8 @@ function oublog_get_participation_details($oublog, $groupid, $individual,
     INNER JOIN {user} u ON bi.userid = u.id ". $gminner ."
     WHERE p.deletedby IS NULL AND oublogid = :oublogid
     AND p.timedeleted IS NULL " . $groupcheck . $period . $thispostuser .
-    $postvisibility . "
-    ORDER BY p.timeposted DESC ";
+    $postvisibility;
+    $postssqlorder = ' ORDER BY p.timeposted DESC ';
     if ($start) {
         $cperiod = 'AND c.timeposted > :timestart ';
     }
@@ -4489,8 +4488,8 @@ function oublog_get_participation_details($oublog, $groupid, $individual,
     AND p.timedeleted IS NULL AND c.timedeleted IS NULL " . $groupcheck .
     $cperiod . $thiscommentuser .
     $postvisibility . $postallowcomments ."
-    AND c.postid = p.id
-    ORDER BY c.timeposted DESC ";
+    AND c.postid = p.id ";
+    $commentsqlorder = 'ORDER BY c.timeposted DESC ';
 
     $params = array(
             'oublogid' => $oublog->id,
@@ -4505,13 +4504,13 @@ function oublog_get_participation_details($oublog, $groupid, $individual,
     $participation = new stdClass();
     $participation->postscount = $DB->get_field_sql("SELECT COUNT(1) FROM ($postssql) as p", $params);
     if ($getposts) {
-        $participation->posts = $DB->get_records_sql($postssql, $params, $limitfrom, $limitnum);
+        $participation->posts = $DB->get_records_sql($postssql . $postssqlorder, $params, $limitfrom, $limitnum);
     } else {
         $participation->posts = array();
     }
     $participation->commentscount = $DB->get_field_sql("SELECT COUNT(1) FROM ($commentssql) as p", $params);
     if ($getcomments) {
-        $participation->comments = $DB->get_records_sql($commentssql, $params, $limitfrom, $limitnum);
+        $participation->comments = $DB->get_records_sql($commentssql . $commentsqlorder, $params, $limitfrom, $limitnum);
     } else {
         $participation->comments = array();
     }
@@ -5139,24 +5138,28 @@ function oublog_import_getallposts($blogid, $sort, $userid = 0, $page = 0, $tags
  * @param array $selected - array of selected post ids
  * @param bool $inccomments - include comments?
  * @param int $userid - user id (ensures user is post author)
+ * @param bool $importall - indicate whether or not get all posts
  * @return array posts
  */
-function oublog_import_getposts($blogid, $bcontextid, $selected, $inccomments = false, $userid = 0) {
+function oublog_import_getposts($blogid, $bcontextid, $selected, $inccomments = false, $userid = 0, $importall = false) {
     global $DB, $USER;
     if ($userid == 0) {
         $userid = $USER->id;
     }
-    list($inwhere, $sqlparams) = $DB->get_in_or_equal($selected);
+    $sqlwhere = "bi.userid = ? AND bi.oublogid = ?  AND p.deletedby IS NULL";
+    $sqlparams = array();
+    if ($importall) {
+        $sqlparams = array($userid, $blogid);
+    } else {
+        list($inwhere, $params) = $DB->get_in_or_equal($selected);
+        $sqlwhere .= " AND p.id $inwhere";
+        $sqlparams = array_merge(array($userid, $blogid), $params);
+    }
     $sql = "SELECT p.*
         FROM {oublog_posts} p
         INNER JOIN {oublog_instances} bi on bi.id = p.oubloginstancesid
-        WHERE bi.userid = ?
-        AND bi.oublogid = ?
-        AND p.deletedby IS NULL
-        AND p.id $inwhere
+        WHERE $sqlwhere
         ORDER BY p.id ASC";
-
-    $sqlparams = array_merge(array($userid, $blogid), $sqlparams);
     if (!$posts = $DB->get_records_sql($sql, $sqlparams)) {
         return array();
     }
