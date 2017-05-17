@@ -1437,7 +1437,14 @@ function oublog_get_user_grades($oublog, $userid = 0) {
                 'The ratingarea option is now a required option when getting user grades from ratings.'
         );
     }
-
+	
+	// for whatever reason, the cmidnumber may be missing. Let's fix that...
+	if (empty($oublog->cmidnumber)) {
+		$cm = get_coursemodule_from_instance('oublog', $oublog->id);
+		$oublog->cmidnumber = $cm->id;	
+		$options->cmid = $oublog->cmidnumber;
+	}
+	
     // Going direct to the db for the context id seemed wrong.
     $context = context_module::instance($options->cmid );
 
