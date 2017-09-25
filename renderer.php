@@ -82,6 +82,8 @@ class mod_oublog_renderer extends plugin_renderer_base {
         $stredit = get_string('edit', 'oublog');
         $strdelete = get_string('delete', 'oublog');
         $strpermalink = get_string('permalink', 'oublog');
+        $strundelete = get_string('undelete', 'oublog');
+        $strdeletepostpermanently = get_string('deletepostpermanently', 'oublog');
 
         $row = '';
         if (isset($post->row)) {
@@ -305,6 +307,18 @@ class mod_oublog_renderer extends plugin_renderer_base {
         if (!$forexport && !$email) {
             $output .= html_writer::tag('a', $strpermalink, array('href' => $CFG->wwwroot .
                     '/mod/oublog/viewpost.php?post=' . $post->id)).' ';
+        }
+
+        if ($post->deletedby){
+            $output .= html_writer::tag('a', $strundelete, array('href' => $CFG->wwwroot .
+                                '/mod/oublog/undeletepost.php?blog=' . $post->oublogid .
+                                '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl)));
+        }
+
+        if ($post->deletedby){
+            $output .= html_writer::tag('a', $strdeletepostpermanently, array('href' => $CFG->wwwroot .
+                                '/mod/oublog/deletepostpermanently.php?blog=' . $post->oublogid .
+                                '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl)));
         }
 
         if (!$post->deletedby) {

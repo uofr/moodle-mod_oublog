@@ -133,6 +133,8 @@ $string['editonsummary'] = 'Edited {$a->editdate}';
 
 $string['edit'] = 'Edit';
 $string['delete'] = 'Delete';
+$string['undelete'] = 'Undelete';
+$string['deletepostpermanently'] = 'Delete Permanently'
 
 $string['olderposts'] = 'Previous posts';
 $string['newerposts'] = 'Newer posts';
@@ -617,6 +619,7 @@ $string['event:postcreated'] = 'Post created';
 $string['event:commentcreated'] = 'Comment created';
 $string['event:commentdeleted'] = 'Comment deleted';
 $string['event:postdeleted'] = 'Post deleted';
+$string['event:postundeleted'] = 'Post undeleted';
 $string['event:postupdated'] = 'Post updated';
 $string['event:postviewed'] = 'Post viewed';
 $string['event:commentapproved'] = 'Comment approved';
