@@ -374,8 +374,7 @@ function oublog_can_view_post($post, $user, $context, $personalblog) {
         }
     }
     // If you dont have capabilities and its not yours, you cant see it.
-    if ($post->deletedby && !has_capability('mod/oublog:manageposts', $context, $user->id) &&
-                ($post->userid !== $user->id)) {
+    if ($post->deletedby && !has_capability('mod/oublog:manageposts', $context, $user->id)) {
         return false;
     }
     // Public visibility means everyone
