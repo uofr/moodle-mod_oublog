@@ -559,7 +559,7 @@ function oublog_edit_post($post, $cm) {
  * @return mixed all data to print a list of blog posts
  */
 function oublog_get_posts($oublog, $context, $offset = 0, $cm, $groupid, $individualid = -1,
-        $userid = null, $tag = '', $canaudit = false, $ignoreprivate = null) {
+        $userid = null, $tag = '', $canaudit = false, $viewdeletedonly, $ignoreprivate = null) {
     global $CFG, $USER, $DB;
     $params = array();
     $sqlwhere = "bi.oublogid = ?";
@@ -567,6 +567,7 @@ function oublog_get_posts($oublog, $context, $offset = 0, $cm, $groupid, $indivi
     $sqljoin = '';
 
     if (isset($userid)) {
+
         $sqlwhere .= " AND bi.userid = ? ";
         $params[] = $userid;
     }
@@ -610,6 +611,15 @@ function oublog_get_posts($oublog, $context, $offset = 0, $cm, $groupid, $indivi
             $context = context_module::instance($cm->id);
             if (has_capability('mod/oublog:view', $context)) {
                 $sqlwhere .= " AND (p.visibility >= " . OUBLOG_VISIBILITY_COURSEUSER . " )";
+                
+                if($viewdeletedonly == 1){
+                    $sqlwhere .= " AND (p.deletedby IS NOT NULL)";
+                }
+
+                if($viewdeletedonly == 2){
+                    $sqlwhere .= " AND (p.deletedby IS NULL)";
+                }
+
             } else {
                 $sqlwhere .= " AND p.visibility > " . OUBLOG_VISIBILITY_COURSEUSER;
             }
@@ -2065,6 +2075,7 @@ function oublog_individual_get_activity_details($cm, $urlroot, $oublog, $current
             $urls[$url] = $item;
             if ($activeindividual == $value) {
                 $active = $url;
+                $forselect = $value;
             }
         }
         if (!empty($urls)) {
@@ -2080,6 +2091,39 @@ function oublog_individual_get_activity_details($cm, $urlroot, $oublog, $current
     // Set up the object details needed.
     $individualdetails = new stdClass;
     $individualdetails->display = $output;
+
+    // Setup the post filter's drop-down menu.
+    $filtermenu = array();
+    $filtermenu[0] = get_string('viewallposts', 'oublog');
+    $filtermenu[1] = get_string('viewdeletedposts', 'oublog');
+    $filtermenu[2] = get_string('dontshowdeletedposts', 'oublog');
+    $filterlabel = get_string('postsfilter', 'oublog') . '&nbsp;';
+  
+    $output = "";
+    $filteractive = '';
+
+    $activefiltervalue = oublog_postfilter_get_active_selection(true);
+
+    foreach ($filtermenu as $filtervalue => $filteritem) {
+        $url = $urlroot.'&amp;individual='. $forselect . '&amp;viewposts='. $filtervalue;
+        $url = str_replace($CFG->wwwroot, '', $url);
+        $url = str_replace('&amp;', '&', $url);
+        $filterurls[$url] = $filteritem;
+        if ($activefiltervalue == $filtervalue) {
+            $filteractive = $url;
+        }
+    }
+
+    if (!empty($filterurls)) {
+        $filterselect = new url_select($filterurls, $filteractive, null, 'selectpostfilter');
+        $filterselect->set_label($filterlabel);
+        $output = $OUTPUT->render($filterselect);
+    }
+    
+    $output = '<div class"oublog-individualselector">'.$output.'</div>';
+
+    $individualdetails->displayfilter = $output;
+    $individualdetails->isitdeletedonly = $activefiltervalue;
     $individualdetails->activeindividual = $activeindividual;
     $individualdetails->mode = $individualmode;
     $individualdetails->userids = array_keys($allowedindividuals);
@@ -2180,7 +2224,23 @@ function oublog_individual_get_active_user($allowedindividuals, $individualmode,
     } else {
         $SESSION->oublog_individualid = $USER->id;
     }
+
     return $SESSION->oublog_individualid;
+}
+
+function oublog_postfilter_get_active_selection($update=false) {
+    global $USER, $SESSION;
+
+    // set new active selection if requested
+    $changepostselect = optional_param('viewposts', -1, PARAM_INT);
+
+    if($update && $changepostselect != -1){
+        $SESSION->oublog_postselected = $changepostselect;
+    }else if (isset($SESSION->oublog_postselected)) {
+        return $SESSION->oublog_postselected;
+    }
+
+    return $SESSION->oublog_postselected;
 }
 
 

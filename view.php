@@ -183,6 +183,7 @@ if ($tag) {
 // Set-up individual.
 $currentindividual = -1;
 $individualdetails = 0;
+$viewdeletedonly = 0;
 
 // Set up whether the group selector should display.
 $showgroupselector = true;
@@ -197,6 +198,11 @@ if ($oublog->individual) {
     $canpost = true;
     $individualdetails = oublog_individual_get_activity_details($cm, $returnurl, $oublog,
             $currentgroup, $context);
+
+    if (has_capability('mod/oublog:viewindividual', $context)) {
+        $viewdeletedonly = $individualdetails->isitdeletedonly;
+    }
+    
     if ($individualdetails) {
         $currentindividual = $individualdetails->activeindividual;
         if (!$individualdetails->newblogpost) {
@@ -207,7 +213,7 @@ if ($oublog->individual) {
 
 // Get Posts.
 list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, $currentgroup,
-        $currentindividual, $oubloguser->id, $tag, $canaudit);
+        $currentindividual, $oubloguser->id, $tag, $canaudit, $viewdeletedonly);
 
 
 $hideunusedblog = !$posts && !$canpost && !$canaudit;
@@ -419,8 +425,14 @@ if ($oublog->individual) {
         echo $individualdetails->display;
         $individualmode = $individualdetails->mode;
         $currentindividual = $individualdetails->activeindividual;
+
+        if (has_capability('mod/oublog:viewindividual', $context)) {
+            echo $individualdetails->displayfilter;
+        }
     }
 }
+
+
 echo '</div>';
 
 if (!$hideunusedblog) {

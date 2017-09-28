@@ -134,7 +134,7 @@ $string['editonsummary'] = 'Edited {$a->editdate}';
 $string['edit'] = 'Edit';
 $string['delete'] = 'Delete';
 $string['undelete'] = 'Undelete';
-$string['deletepostpermanently'] = 'Delete Permanently'
+$string['deletepostpermanently'] = 'Delete permanently';
 
 $string['olderposts'] = 'Previous posts';
 $string['newerposts'] = 'Newer posts';
@@ -276,6 +276,11 @@ $string['separateindividual'] = 'Separate&nbsp;individuals';
 $string['visibleindividual'] = 'Visible&nbsp;individuals';
 $string['viewallusers'] = 'View all users';
 $string['viewallusersingroup'] = 'View all users in group';
+
+$string['viewallposts'] = 'View all posts';
+$string['viewdeletedposts'] = 'View deleted posts';
+$string['postsfilter'] = 'Posts filter';
+$string['dontshowdeletedposts'] = 'Hide deleted posts';
 
 $string['re'] = 'Re: {$a}';
 
