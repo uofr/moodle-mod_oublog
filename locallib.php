@@ -215,6 +215,7 @@ function oublog_can_post_now($oublog, $context) {
 function oublog_can_post($oublog, $bloguserid=0, $cm=null) {
     global $USER;
     if ($oublog->global) {
+
         if ($bloguserid==0) {
             debugging('Calls to oublog_can_post for personal blogs must supply userid!', DEBUG_DEVELOPER);
         }
@@ -575,6 +576,7 @@ function oublog_get_posts($oublog, $context, $offset = 0, $cm, $groupid, $indivi
     if ($individualid > -1) {
         $capable = oublog_individual_has_permissions($cm, $oublog, $groupid, $individualid);
         oublog_individual_add_to_sqlwhere($sqlwhere, $params, 'bi.userid', $oublog->id, $groupid, $individualid, $capable);
+
     } else {// No individual blog.
         if (isset($groupid) && $groupid) {
             $sqlwhere .= " AND p.groupid =  ? ";
@@ -2005,14 +2007,16 @@ function oublog_individual_get_activity_details($cm, $urlroot, $oublog, $current
             'oublog_print_individual_activity_menu($cm, $CFG->wwwroot . \'/mod/mymodule/view.php?id=13\');',
         DEBUG_DEVELOPER);
     }
+
     // get groupmode and individualmode
     $groupmode = oublog_get_activity_groupmode($cm);
     $individualmode = $oublog->individual;
 
     // No individual blogs.
-    if ($individualmode == OUBLOG_NO_INDIVIDUAL_BLOGS) {
+    /*if ($individualmode == OUBLOG_NO_INDIVIDUAL_BLOGS) {
         return '';
-    }
+    }*/
+
     // If no groups or 'all groups' selection' ($currentgroup == 0).
     if ($groupmode == NOGROUPS || $currentgroup == 0) {
         // Visible individual.
@@ -4226,6 +4230,7 @@ function oublog_stats_output_participation($oublog, $cm, $renderer = null, $cour
     if ($blogtype && !isloggedin()) {
         return;
     }
+
     // Dont show if current individual is not 0 and either separate individual blog or
     // visible individual with no comments.
     if (isset($curindividual) && $curindividual != 0 &&

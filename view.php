@@ -198,10 +198,6 @@ if ($oublog->individual) {
     $canpost = true;
     $individualdetails = oublog_individual_get_activity_details($cm, $returnurl, $oublog,
             $currentgroup, $context);
-
-    if (has_capability('mod/oublog:viewindividual', $context)) {
-        $viewdeletedonly = $individualdetails->isitdeletedonly;
-    }
     
     if ($individualdetails) {
         $currentindividual = $individualdetails->activeindividual;
@@ -209,6 +205,13 @@ if ($oublog->individual) {
             $canpost = false;
         }
     }
+}
+
+$individualdetails = oublog_individual_get_activity_details($cm, $returnurl, $oublog,
+            $currentgroup, $context);
+
+if (has_capability('mod/oublog:viewindividual', $context)) {
+        $viewdeletedonly = $individualdetails->isitdeletedonly;
 }
 
 // Get Posts.
@@ -424,14 +427,13 @@ if ($oublog->individual) {
     if ($individualdetails) {
         echo $individualdetails->display;
         $individualmode = $individualdetails->mode;
-        $currentindividual = $individualdetails->activeindividual;
-
-        if (has_capability('mod/oublog:viewindividual', $context)) {
-            echo $individualdetails->displayfilter;
-        }
+        /*$currentindividual = $individualdetails->activeindividual;*/     
     }
 }
 
+if (has_capability('mod/oublog:viewindividual', $context)) {
+            echo $individualdetails->displayfilter;
+}
 
 echo '</div>';
 
