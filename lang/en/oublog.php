@@ -110,7 +110,15 @@ $string['globalusageexclude'] = 'Exclude from global usage stats';
 $string['globalusageexclude_desc'] = 'Comma-separated list of user ids to exclude users from the top usage stats list for global blog';
 
 $string['introonpost'] = 'Show intro when posting';
-
+$string['sharedblog'] = 'Shared blog';
+$string['sharedblog_invalid'] = 'No matching ID number';
+$string['sharedblog_invalid_morethan1'] = 'More than 1 matching ID number';
+$string['sharedblog_existed'] = 'This is an ID number of a child blog';
+$string['sharedblog_mastered'] = 'This blog is already a master blog';
+$string['sharedblog_error'] = 'Error – no blog with that ID is available';
+$string['sharedblog_help'] = '<p><strong>Shared blog</strong></p>
+<p>This option allows the blog instance to act as a ‘child’ blog and display the content of a ‘master’ blog.</p>
+<p>Please input the IDNumber field value of \'master\' blog whose content you wish this blog to display</p>';
 $string['displayname_default'] = 'blog';
 $string['displayname'] = 'Alternate activity name (blank uses default)';
 $string['displayname_help'] = 'Set an alternate activity type name within the interface.
@@ -191,6 +199,7 @@ $string['postedbymoderatedaudit'] = 'by {$a->commenter} [{$a->ip}] (approved by 
 $string['deletedby'] = 'Deleted by {$a->fullname}, {$a->timedeleted}';
 
 $string['newcomment'] = 'New comment';
+$string['personalblogtitle'] = 'Personal blog';
 $string['postmessage'] = 'Post';
 
 $string['searchthisblog'] = 'Search this {$a}';
@@ -270,8 +279,8 @@ $string['no_blogtogetheroringroups'] = 'No (blog together or in groups)';
 $string['separateindividualblogs'] = 'Separate individual blogs';
 $string['visibleindividualblogs'] = 'Visible individual blogs';
 
-$string['separateindividual'] = 'Separate&nbsp;individuals';
-$string['visibleindividual'] = 'Visible&nbsp;individuals';
+$string['separateindividual'] = 'Separate individuals';
+$string['visibleindividual'] = 'Visible individuals';
 $string['viewallusers'] = 'View all users';
 $string['viewallusersingroup'] = 'View all users in group';
 
@@ -305,8 +314,7 @@ $string['moderated_restrictpage'] = 'Restrict commenting';
 $string['moderated_restrictpost_info'] = 'Would you like to restrict comments on this post so that only people who are logged into the system can add comments?';
 $string['moderated_restrictblog_info'] = 'Would you like to restrict comments on all your posts on this blog so that only people who are logged into the system can add comments?';
 $string['moderated_emailsubject'] = 'Comment awaiting approval on: {$a->blog} ({$a->commenter})';
-$string['moderated_emailhtml'] =
-'<p>(This is an automatically-generated email. Please do not reply.)</p>
+$string['moderated_emailhtml'] = '<p>(This is an automatically-generated email. Please do not reply.)</p>
 <p>Someone has added a comment to your blog post: {$a->postlink}</p>
 <p>You need to <strong>approve the comment</strong> before it will appear in public.</p>
 <p>The system does not know the identity of the commenter and comments may
@@ -337,8 +345,7 @@ to logged-in users only.
 <li><a href=\'{$a->restrictpostlink}\'>{$a->restrictposttext}</a></li>
 <li><a href=\'{$a->restrictbloglink}\'>{$a->restrictblogtext}</a></li>
 </ul>';
-$string['moderated_emailtext'] =
-'This is an automatically-generated email. Please do not reply.
+$string['moderated_emailtext'] = 'This is an automatically-generated email. Please do not reply.
 
 Someone has added a comment to your blog post:
 {$a->postlink}
@@ -557,9 +564,9 @@ $string['import_step2_inst'] = 'Importing posts:';
 $string['import_step2_none'] = 'No posts selected for import.';
 $string['import_step2_prog'] = 'Importing in progress';
 $string['import_step2_total'] = '{$a} post(s) imported successfully';
-$string['import_step2_conflicts'] = '{$a} post(s) to import were identified as conflicts with existing posts.';
-$string['import_step2_conflicts_submit'] = 'Import conflicting posts';
-
+$string['import_step2_conflicts'] = '{$a} post(s) have been imported before. If you wish to import the posts again select ‘import duplicate posts’ and another copy will be added to your blog.';
+$string['import_step2_conflicts_submit'] = 'Import duplicate posts';
+$string['import_step2_cancel_submit'] = 'Do not import duplicate posts';
 // My Participation.
 $string['contribution'] = 'Participation';
 $string['contribution_all'] = 'Participation - All time';
@@ -582,7 +589,7 @@ $string['viewmyparticipation'] = 'View my participation';
 $string['viewallparticipation'] = 'View all participation';
 $string['timestartenderror'] = 'Selection end date cannot be earlier than the start date';
 
-$string['savefailtitle']='Post cannot be saved';
+$string['savefailtitle'] = 'Post cannot be saved';
 $string['savefailnetwork'] = '<p>Unfortunately, your changes cannot be saved at this time.
 This is due to a network error; the website is temporarily unavailable or you have been signed out. </p>
 <p>Saving has been disabled on this blog.
@@ -644,7 +651,86 @@ $string['restricttags'] = 'Tag options';
 $string['restricttags_req'] = 'Must enter tags';
 $string['restricttags_req_set'] = 'Must enter pre-defined tags only';
 $string['restricttags_set'] = 'Allow pre-defined tags only';
+$string['restricttags_default'] = 'Add tags by default';
 $string['restricttags_help'] = 'If you select this option, you can restrict
 tag entry to only those that are pre-defined at activity level and/or require that at least one tag be entered in a post.';
 $string['restricttagslist'] = 'You may only enter the \'Set\' tags: {$a}';
 $string['restricttagsvalidation'] = 'Only \'Set\' tags are allowed to be entered';
+
+$string['search:post'] = 'OU blog - posts';
+$string['search:activity'] = 'OU blog - activity information';
+$string['search:comments'] = 'OU blog - posts comments';
+$string['numberofposts'] = 'Number of posts per page';
+$string['numberofposts_help'] = 'Set the number of posts per page to display in a blog.';
+
+// GDPR.
+$string['privacy:metadata:oublog_comments'] = 'Comments on an OU blog post.';
+$string['privacy:metadata:oublog_comments:title'] = 'The title of the comment.';
+$string['privacy:metadata:oublog_comments:userid'] = 'The user ID of the comment originator.';
+$string['privacy:metadata:oublog_comments:message'] = 'The comment detail.';
+$string['privacy:metadata:oublog_comments:authorname'] = 'For moderated comments: author name (required).';
+$string['privacy:metadata:oublog_comments:authorip'] = 'For moderated comments: author IP address (required).';
+
+$string['privacy:metadata:oublog_instances'] = 'Instances of a personal OU blog.';
+$string['privacy:metadata:oublog_instances:name'] = 'The name of the OU blog instance.';
+$string['privacy:metadata:oublog_instances:userid'] = 'The user ID of the OU blog instance owner.';
+$string['privacy:metadata:oublog_instances:summary'] = 'Summary of the OU blog instance.';
+
+$string['privacy:metadata:oublog_posts'] = 'Posts in an OU blog.';
+$string['privacy:metadata:oublog_posts:message'] = 'The text of the OU blog post.';
+$string['privacy:metadata:oublog_posts:title'] = 'The title of the OU blog post.';
+$string['privacy:metadata:oublog_posts:deletedby'] = 'The user who deleted this blog post (if it was deleted).';
+$string['privacy:metadata:oublog_posts:lasteditedby'] = 'The user to last edit the OU blog post (if it was edited).';
+
+$string['privacy:metadata:oublog_edits'] = 'OU blog edits (holds previous OU blog post versions).';
+$string['privacy:metadata:oublog_edits:userid'] = 'The user ID of the OU blog post editor.';
+$string['privacy:metadata:oublog_edits:oldtitle'] = 'The previous title of the OU blog post.';
+$string['privacy:metadata:oublog_edits:oldmessage'] = 'The previous content of the OU blog post.';
+
+$string['privacy:metadata:oublog_tags'] = 'Tags associated with OU blog posts.';
+$string['privacy:metadata:oublog_tags:tag'] = 'The OU blog post tag.';
+
+$string['privacy:metadata:oublog_taginstances'] = 'OU blog instances of tags.';
+$string['privacy:metadata:oublog_taginstances:oubloginstancesid'] = 'The OU blog instance the tag is associated with.';
+$string['privacy:metadata:oublog_taginstances:postid'] = 'The OU blog post the tag is associated with.';
+$string['privacy:metadata:oublog_taginstances:tagid'] = 'The actual tag identifier.';
+
+$string['privacy:metadata:oublog_comments_moderated'] = 'OU blog post comments for moderation.';
+$string['privacy:metadata:oublog_comments_moderated:postid'] = 'The post id the comment is on.';
+$string['privacy:metadata:oublog_comments_moderated:title'] = 'The title the comment.';
+$string['privacy:metadata:oublog_comments_moderated:message'] = 'The comment detail.';
+$string['privacy:metadata:oublog_comments_moderated:authorname'] = 'Author name (required).';
+$string['privacy:metadata:oublog_comments_moderated:authorip'] = 'Author IP address (required).';
+
+$string['privacy:metadata:preference:oublog_tagorder'] = 'The order you have chosen to display tags in.';
+$string['privacy:metadata:preference:mod_oublog_postformfilter'] = 'Whether to show all/month/year stats for posts.';
+$string['privacy:metadata:preference:mod_oublog_visitformfilter'] = 'Whether to show all/month/year stats for visits.';
+$string['privacy:metadata:preference:mod_oublog_commentformfilter'] = 'Whether to show all/month/year stats for comments.';
+$string['privacy:metadata:preference:mod_oublog_commentpostformfilter'] = 'Whether to show all/month/year stats for most commented posts.';
+$string['privacy:metadata:preference:mod_oublog_hidestatsform_post'] = 'Whether to hide stats for posts.';
+$string['privacy:metadata:preference:mod_oublog_hidestatsform_visit'] = 'Whether to hide stats for visits.';
+$string['privacy:metadata:preference:mod_oublog_hidestatsform_comment'] = 'Whether to hide stats for comments.';
+$string['privacy:metadata:preference:mod_oublog_hidestatsform_commentpost'] = 'Whether to hide stats for most commented posts.';
+$string['privacy:metadata:preference:oublog_accordion_view_open'] = 'Which panel is visible within the stats display (normal blog view page).';
+$string['privacy:metadata:preference:oublog_accordion_allposts_open'] = 'Which panel is visible within the stats display (all posts view page).';
+
+$string['privacy:metadata:core_rating'] = 'Ratings added to blog entries are stored using core_rating system';
+
+$string['privacy_you'] = 'You';
+$string['privacy_somebodyelse'] = 'Somebody else';
+$string['privacy_editnumber'] = 'Edit {$a}';
+$string['privacy_commentnumber'] = 'Comment {$a}';
+$string['privacy_commentplaceholder'] = '(Comment deleted by user request)';
+
+$string['accordion_open'] = 'Open';
+$string['accordion_closed'] = 'Closed';
+
+$string['export:title'] = 'Export';
+$string['export:header'] = 'Export';
+$string['export:description'] = 'You can export individual blog posts from your online module content using the links below. 
+Alternatively, select several posts, the export type, and click \'Export\' to download them all at once.';
+$string['export:type'] = 'Export type';
+$string['export:header_title'] = 'Title';
+$string['export:header_date_posted'] = 'Date posted';
+$string['export:header_tags'] = 'Tags';
+$string['export:header_author'] = 'Author';

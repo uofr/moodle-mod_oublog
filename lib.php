@@ -41,7 +41,7 @@ function oublog_add_instance($oublog) {
     global $DB;
     // Generate an accesstoken.
     $oublog->accesstoken = md5(uniqid(rand(), true));
-
+    $oublog->timemodified = time();
     if (empty($oublog->ratingtime) || empty($oublog->assessed)) {
         $oublog->assesstimestart = 0;
         $oublog->assesstimefinish = 0;
@@ -78,7 +78,7 @@ function oublog_add_instance($oublog) {
 function oublog_update_instance($oublog) {
     global $DB;
     $oublog->id = $oublog->instance;
-
+    $oublog->timemodified = time();
     if (!$DB->get_record('oublog', array('id' => $oublog->id))) {
         return(false);
     }
@@ -437,7 +437,7 @@ function oublog_print_recent_mod_activity($activity, $courseid, $detail, $modnam
 
     echo '<div class="title">';
     if ($detail) {
-        echo "<img src=\"".$OUTPUT->pix_url('icon', $activity->type)."\" class=\"icon\" alt=\"".s($activity->title)."\" />";
+        echo "<img src=\"".$OUTPUT->image_url('icon', $activity->type)."\" class=\"icon\" alt=\"".s($activity->title)."\" />";
     }
     echo "<a href=\"$CFG->wwwroot/mod/oublog/viewpost.php?post={$activity->content->postid}\">{$activity->content->title}</a>";
     echo '</div>';
@@ -797,15 +797,15 @@ function oublog_pluginfile($course, $cm, $context, $filearea, $args, $forcedownl
     $fs = get_file_storage();
     $relativepath = implode('/', $args);
     $fullpath = "/$context->id/mod_oublog/$filearea/$fileid/$relativepath";
-
     if (!$file = $fs->get_file_by_hash(sha1($fullpath)) or $file->is_directory()) {
         return false;
     }
-
     // Make sure we're allowed to see it...
     // Check if coming from webservice - if so always allow.
     $ajax = constant('AJAX_SCRIPT') ? true : false;
-    if ($filearea != 'summary' && !$ajax && !oublog_can_view_post($post, $USER, $context, $oublog->global)) {
+    $cmid = optional_param('cmid', null, PARAM_INT);
+    $context = $cmid ? context_module::instance($cmid) : $context;
+    if ($filearea != 'summary' && !$ajax && !oublog_can_view_post($post, $USER, $context, $cm, $oublog)) {
         return false;
     }
     if ($filearea == 'attachment') {
@@ -864,7 +864,7 @@ function oublog_get_file_info($browser, $areas, $course, $cm, $context, $fileare
     }
     // Check if the user is allowed to view the post
     try {
-        if (!oublog_can_view_post($post, $USER, $context, $oublog->global)) {
+        if (!oublog_can_view_post($post, $USER, $context, $cm, $oublog)) {
             return null;
         }
     } catch (mod_oublog_exception $e) {
@@ -1359,8 +1359,11 @@ function mod_oublog_rating_can_see_item_ratings($params) {
 
     $blog = oublog_get_blog_from_postid($params['itemid']);
     $post = oublog_get_post($params['itemid'], true);
+    $modinfo = get_fast_modinfo($blog->course);
+    $bloginstances = $modinfo->get_instances_of('oublog');
+    $cm = $bloginstances[$blog->id];
 
-    if (!oublog_can_view_post($post, $USER, $context, $blog->global)) {
+    if (!oublog_can_view_post($post, $USER, $context, $cm, $blog)) {
         return false;
     }
 

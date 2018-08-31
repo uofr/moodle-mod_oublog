@@ -405,5 +405,57 @@ function xmldb_oublog_upgrade($oldversion=0) {
         upgrade_mod_savepoint(true, 2016081600, 'oublog');
     }
 
+    if ($oldversion < 2017061600) {
+
+        // Add timemodified field for applying global search to oublog activity.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+
+        // Conditionally launch add field timemodified.
+        if (!$dbman->field_exists($table, $field)) {
+            // Add the field but allowing nulls.
+            $dbman->add_field($table, $field);
+            // Set the field to 0 for everything.
+            $DB->set_field('oublog', 'timemodified', '0');
+            // Changing nullability of field timemodified to not null.
+            $field = new xmldb_field('timemodified', XMLDB_TYPE_INTEGER, '10', null,
+                XMLDB_NOTNULL, null, null);
+            // Launch change of nullability for field themetype.
+            $dbman->change_field_notnull($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2017061600, 'oublog');
+    }
+
+    if ($oldversion < 2018031300) {
+        // Add postperpage field setting.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('postperpage', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '25', 'timemodified');
+
+        // Conditionally launch add field postperpage.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2018031300, 'oublog');
+    }
+
+    if ($oldversion < 2018032001) {
+        // Define field idsharedblog to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('idsharedblog', XMLDB_TYPE_CHAR, '100',
+            null, null, null, null, 'postperpage');
+
+        // Conditionally launch add field idsharedblog.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // OUblog savepoint reached.
+        upgrade_mod_savepoint(true, 2018032001, 'oublog');
+    }
+
     return true;
 }

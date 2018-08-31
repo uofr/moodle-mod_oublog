@@ -9,8 +9,8 @@ Feature: Test import posts function for blog
       | username | firstname | lastname | email            |
       | student1 | Student1  | 1        | student1@asd.com |
     And the following "courses" exist:
-      | fullname | shortname | format      | category |
-      | Course 1 | C1        | oustudyplan | 0        |
+      | fullname | shortname | format      | category | numsections |
+      | Course 1 | C1        | oustudyplan | 0        | 0           |
     And the following "course enrolments" exist:
       | user     | course | role    |
       | student1 | C1     | student |
@@ -24,8 +24,7 @@ Feature: Test import posts function for blog
     And I log in as "student1"
     And I am on site homepage
     And I am using the OSEP theme
-    And I follow "Course 1"
-    And I press "Expand all"
+    And I am on "Course 1" course homepage
     And I follow "student 1 blog one"
     And I press "New blog post"
     And I set the following fields to these values:
@@ -54,8 +53,7 @@ Feature: Test import posts function for blog
 
   @javascript
   Scenario: Display import selected posts and import blog links for each blog that has post.
-    Given I am on site homepage
-    And I follow "Course 1"
+    Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"
     When I click on "Import" "button"
     Then I should see "student 1 blog three (0 posts)"
@@ -65,8 +63,7 @@ Feature: Test import posts function for blog
 
   @javascript
   Scenario: Navigate to post listing page when clicking on import selected posts link.
-    Given I am on site homepage
-    And I follow "Course 1"
+    Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"
     And I click on "Import" "button"
     When I follow "Import selected posts"
@@ -93,8 +90,7 @@ Feature: Test import posts function for blog
 
   @javascript
   Scenario: Perform the import all posts of the selected blog when clicking on import blog link.
-    Given I am on site homepage
-    And I follow "Course 1"
+    Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"
     And I click on "Import" "button"
     When I follow "Import blog"
@@ -113,3 +109,18 @@ Feature: Test import posts function for blog
     Then I should see "Post 0 Comment 1 message"
     Then I should see "Post 0 comment 2"
     Then I should see "Post 0 Comment 2 message"
+
+  @javascript
+  Scenario: Perform the import all posts again to should see confirm duplicate posts.
+    Given I am on "Course 1" course homepage
+    And I follow "student 1 blog two"
+    And I click on "Import" "button"
+    When I follow "Import blog"
+    Then I should see "2 post(s) imported successfully"
+    And I click on "Continue" "button"
+    And I click on "Import" "button"
+    When I follow "Import blog"
+    Then I should see "0 post(s) imported successfully"
+    Then I should see "2 post(s) have been imported before. If you wish to import the posts again select ‘import duplicate posts’ and another copy will be added to your blog."
+    And "Import duplicate posts" "button" should exist
+    And "Do not import duplicate posts" "button" should exist

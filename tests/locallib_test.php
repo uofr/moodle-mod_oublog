@@ -390,7 +390,8 @@ class oublog_locallib_test extends oublog_test_lib {
         $stud2 = $this->get_new_user();
 
         if (!$oublog = $DB->get_record('oublog', array('global' => 1))) {
-            $oublog = $this->get_new_oublog($SITE->id, array('global' => 1, 'maxvisibility' => OUBLOG_VISIBILITY_PUBLIC));
+            $oublog = $this->get_new_oublog($SITE->id, array('global' => 1, 'maxvisibility' => OUBLOG_VISIBILITY_PUBLIC,
+                'postperpage' => 25));
         }
 
         $cm = get_coursemodule_from_instance('oublog', $oublog->id);
@@ -435,7 +436,7 @@ class oublog_locallib_test extends oublog_test_lib {
         // Test 4 - create multiple posts for pagination tests.
         $this->setAdminUser();
         // Number of posts/comments for tests.
-        $postcount = OUBLOG_POSTS_PER_PAGE;
+        $postcount = $postperpage = (int)$oublog->postperpage;
         // Create further post stubs for students, ie 3 pages.
         // Create student 1s post stubs.
         $posthashes = $postids = array();
@@ -460,18 +461,18 @@ class oublog_locallib_test extends oublog_test_lib {
         }
         // Setup pagination offset count for page 1.
         $page = 0;
-        $offset = $page * OUBLOG_POSTS_PER_PAGE;
+        $offset = $page * $postperpage;
         list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, 0, -1, null, '', true, true);
-        $this->assertEquals(OUBLOG_POSTS_PER_PAGE * 2 + 2, $recordcount);// Includes count of lesser visibility posts.
-        $this->assertCount(OUBLOG_POSTS_PER_PAGE, $posts);// Includes only paged visibile posts.
+        $this->assertEquals($postperpage * 2 + 2, $recordcount);// Includes count of lesser visibility posts.
+        $this->assertCount($postperpage, $posts);// Includes only paged visibile posts.
         // Setup pagination offset count for page 2.
         $page = 1;
-        $offset = $page * OUBLOG_POSTS_PER_PAGE;
+        $offset = $page * $postperpage;
         list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, 0, -1, null, '', true, true);
-        $this->assertCount(OUBLOG_POSTS_PER_PAGE, $posts);// Includes only paged visibile posts.
+        $this->assertCount($postperpage, $posts);// Includes only paged visibile posts.
         // Setup pagination offset count for page 3.
         $page = 2;
-        $offset = $page * OUBLOG_POSTS_PER_PAGE;
+        $offset = $page * $postperpage;
         list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, 0, -1, null, '', true, true);
         $this->assertCount(2, $posts);// Includes only paged visibile posts.
     }
@@ -1283,7 +1284,7 @@ class oublog_locallib_test extends oublog_test_lib {
         $oublog = $this->get_new_oublog($course->id);
         $cm = get_coursemodule_from_id('oublog', $oublog->cmid);
         // Number of posts for test, more than posts per page
-        $postcount = OUBLOG_POSTS_PER_PAGE + (OUBLOG_POSTS_PER_PAGE / 2);
+        $postcount = $oublog->postperpage + (int)($oublog->postperpage / 2);
         $titlecheck = 'test_oublog_get_posts_pagination';
 
         // First make sure we have some posts to use.
@@ -1302,17 +1303,17 @@ class oublog_locallib_test extends oublog_test_lib {
         $context = context_module::instance($cm->id);
         // Build paging parameters for the first page .
         $page = 0;
-        $offset = $page * OUBLOG_POSTS_PER_PAGE;
+        $offset = $page * $oublog->postperpage;
         // Get a list of the pages posts.
         list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, 0);
         // Same number of records discovered that were created?
         $this->assertEquals($postcount, $recordcount);
         // Is the number of posts returned that were expected?.
-        $this->assertEquals(OUBLOG_POSTS_PER_PAGE, count($posts));
+        $this->assertEquals($oublog->postperpage, count($posts));
 
         // Build paging parameters for the second page.
         $page = 1;
-        $offset = $page * OUBLOG_POSTS_PER_PAGE;
+        $offset = $page * $oublog->postperpage;
         // Get the list of the second pages posts.
         list($posts, $recordcount) = oublog_get_posts($oublog, $context, $offset, $cm, 0);
         // Number of posts returned that were expected?.
@@ -1568,5 +1569,160 @@ class oublog_locallib_test extends oublog_test_lib {
         $this->assertTrue(oublog_can_comment($oublog1->cm, $oublog1, $post));
         $this->assertTrue(oublog_can_comment($oublog2->cm, $oublog2, $post));
         $this->assertFalse(oublog_can_comment($oublog3->cm, $oublog3, $post));
+    }
+
+    /**
+     * Tests the can_view_post access restriction function.
+     */
+    public function test_can_view_post() {
+        global $USER;
+
+        $this->resetAfterTest();
+        $course = $this->get_new_course();
+
+        // Set up users an groups:
+        // Group 1*: student 1 only.
+        // Group 2*: student 1, student 2.
+        // Group 3: student 1, student 3.
+        // Group 4*: student 2, student 3, student 4.
+        // * = belongs to grouping.
+        $stud1 = $this->get_new_user('student', $course->id);
+        $stud2 = $this->get_new_user('student', $course->id);
+        $stud3 = $this->get_new_user('student', $course->id);
+        $stud4 = $this->get_new_user('student', $course->id);
+
+        $group1 = $this->get_new_group($course->id);
+        $group2 = $this->get_new_group($course->id);
+        $group3 = $this->get_new_group($course->id);
+        $group4 = $this->get_new_group($course->id);
+        $grouping = $this->get_new_grouping($course->id);
+        groups_assign_grouping($grouping->id, $group1->id);
+        groups_assign_grouping($grouping->id, $group2->id);
+        groups_assign_grouping($grouping->id, $group4->id);
+        groups_add_member($group1, $stud1);
+        groups_add_member($group2, $stud1);
+        groups_add_member($group3, $stud1);
+        groups_add_member($group2, $stud2);
+        groups_add_member($group3, $stud3);
+        groups_add_member($group4, $stud2);
+        groups_add_member($group4, $stud3);
+        groups_add_member($group4, $stud4);
+
+        // Create roles for special staff.
+        $generator = $this->getDataGenerator();
+        $systemcontext = \context_system::instance();
+        $aagroleid = $generator->create_role(['shortname' => 'aag']);
+        assign_capability('moodle/site:accessallgroups', CAP_ALLOW, $aagroleid, $systemcontext);
+        $viroleid = $generator->create_role(['shortname' => 'vi']);
+        assign_capability('mod/oublog:viewindividual', CAP_ALLOW, $viroleid, $systemcontext);
+
+        // Give them student for general access, but add the special roles.
+        $coursecontext = \context_course::instance($course->id);
+        $staffaag = $this->get_new_user('student', $course->id);
+        role_assign($aagroleid, $staffaag->id, $coursecontext);
+        $staffvi = $this->get_new_user('student', $course->id);
+        role_assign($viroleid, $staffvi->id, $coursecontext);
+        $staffvigroups = $this->get_new_user('student', $course->id);
+        role_assign($viroleid, $staffvigroups->id, $coursecontext);
+        groups_add_member($group1, $staffvigroups);
+        groups_add_member($group3, $staffvigroups);
+        $staffaagvi = $this->get_new_user('student', $course->id);
+        role_assign($aagroleid, $staffaagvi->id, $coursecontext);
+        role_assign($viroleid, $staffaagvi->id, $coursecontext);
+
+        // Normal blog.
+        $blogs = [];
+        $blogs['normal'] = $this->get_new_oublog($course->id);
+        // Visible individual, no groups
+        $blogs['vi'] = $this->get_new_oublog($course->id,
+                ['individual' => OUBLOG_VISIBLE_INDIVIDUAL_BLOGS]);
+        // Separate individual, no groups
+        $blogs['si'] = $this->get_new_oublog($course->id,
+                ['individual' => OUBLOG_SEPARATE_INDIVIDUAL_BLOGS]);
+        // Visible groups.
+        $blogs['vg'] = $this->get_new_oublog($course->id,
+                ['groupmode' => VISIBLEGROUPS]);
+        // Separate groups.
+        $blogs['sg'] = $this->get_new_oublog($course->id,
+                ['groupmode' => SEPARATEGROUPS]);
+        // Separate groups with a grouping.
+        $blogs['sgg'] = $this->get_new_oublog($course->id,
+                ['groupmode' => SEPARATEGROUPS, 'groupingid' => $grouping->id]);
+        // Visible individual, separate groups.
+        $blogs['visg'] = $this->get_new_oublog($course->id,
+                ['individual' => OUBLOG_VISIBLE_INDIVIDUAL_BLOGS, 'groupmode' => SEPARATEGROUPS]);
+        // Visible individual, separate groups with a grouping.
+        $blogs['visgg'] = $this->get_new_oublog($course->id,
+                ['individual' => OUBLOG_VISIBLE_INDIVIDUAL_BLOGS, 'groupmode' => SEPARATEGROUPS,
+                'groupingid' => $grouping->id]);
+        // Separate individual, separate groups.
+        $blogs['sisg'] = $this->get_new_oublog($course->id,
+                ['individual' => OUBLOG_SEPARATE_INDIVIDUAL_BLOGS, 'groupmode' => SEPARATEGROUPS]);
+        // Separate individual, separate groups with a grouping.
+        $blogs['sisgg'] = $this->get_new_oublog($course->id,
+                ['individual' => OUBLOG_SEPARATE_INDIVIDUAL_BLOGS, 'groupmode' => SEPARATEGROUPS,
+                'groupingid' => $grouping->id]);
+
+        // Normal and individuals blogs - posts from each individual.
+        $blogposts = [];
+        foreach ([$stud1, $stud2, $stud3, $stud4] as $user) {
+            $this->setUser($user);
+            foreach (['normal', 'vi', 'si', 'visg', 'visgg', 'sisg', 'sisgg'] as $key) {
+                if (!array_key_exists($key, $blogposts)) {
+                    $blogposts[$key] = [];
+                }
+                $blogposts[$key][] = $this->get_new_post($blogs[$key]);
+            }
+        }
+
+        // Group blogs - posts in each group (all by user 4).
+        $this->setUser($stud4);
+        foreach ([$group1, $group2, $group3, $group4] as $group) {
+            foreach (['vg', 'sg', 'sgg'] as $key) {
+                // Skip the wrong-grouping one.
+                if ($key === 'sgg' && $group === $group3) {
+                    continue;
+                }
+                if (!array_key_exists($key, $blogposts)) {
+                    $blogposts[$key] = [];
+                }
+                $blogposts[$key][] = $this->get_new_post($blogs[$key],
+                        (object)['groupid' => $group->id]);
+            }
+        }
+
+        $results = [];
+        foreach ([$stud1, $staffaag, $staffvi, $staffaagvi, $staffvigroups] as $user) {
+            $this->setUser($user);
+            $result = '';
+
+            // Check access to each post.
+            foreach ($blogposts as $key => $postids) {
+                $oublog = $blogs[$key];
+                list ($course, $cm) = get_course_and_cm_from_instance($oublog, 'oublog');
+                $context = context_module::instance($cm->id);
+                $result .= $key . ':';
+                foreach ($postids as $index => $postid) {
+                    $post = oublog_get_post($postid);
+                    $allow = oublog_can_view_post($post, $USER, $context, $cm, $oublog);
+                    $result .= $allow ? 't' : 'f';
+                }
+                $result .= ',';
+            }
+
+            $results[$user->id] = $result;
+        }
+
+        // Test for the student account and for the staff accounts with special permissions.
+        $this->assertEquals('normal:tttt,vi:tttt,si:tfff,visg:tttf,visgg:ttff,sisg:tfff,sisgg:tfff,vg:tttt,sg:tttf,sgg:ttf,',
+                $results[$stud1->id]);
+        $this->assertEquals('normal:tttt,vi:tttt,si:ffff,visg:tttt,visgg:tttt,sisg:ffff,sisgg:ffff,vg:tttt,sg:tttt,sgg:ttt,',
+                $results[$staffaag->id]);
+        $this->assertEquals('normal:tttt,vi:tttt,si:tttt,visg:ffff,visgg:ffff,sisg:ffff,sisgg:ffff,vg:tttt,sg:ffff,sgg:fff,',
+                $results[$staffvi->id]);
+        $this->assertEquals('normal:tttt,vi:tttt,si:tttt,visg:tttt,visgg:tttt,sisg:tttt,sisgg:tttt,vg:tttt,sg:tttt,sgg:ttt,',
+                $results[$staffaagvi->id]);
+        $this->assertEquals('normal:tttt,vi:tttt,si:tttt,visg:tftf,visgg:tfff,sisg:tftf,sisgg:tfff,vg:tttt,sg:tftf,sgg:tff,',
+                $results[$staffvigroups->id]);
     }
 }

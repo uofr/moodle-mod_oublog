@@ -24,13 +24,13 @@ Feature: Test Post and Comment on Seperate Individual Blogs
 
     # Admin changes settings for separate individuals
     And I log in as "admin"
-    And I am on site homepage
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Testing separate individuals oublogs"
     And I follow "Edit settings"
     And I set the following fields to these values:
       | Individual blogs | Separate individual blogs |
     And I press "Save and display"
+    And I should see "Separate individuals"
     And ".oublog-individualselector" "css_element" should exist
     And I should see "There are no visible posts in this blog"
     And I log out
@@ -38,7 +38,7 @@ Feature: Test Post and Comment on Seperate Individual Blogs
   Scenario: Teacher tests the separate blog visibility
     Given I log in as "teacher1"
     And I am on homepage
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Testing separate individuals oublogs"
     And I press "New blog post"
     And I should see "New blog post"
@@ -57,7 +57,7 @@ Feature: Test Post and Comment on Seperate Individual Blogs
 
     # Student1 user posts
     Given I log in as "student1"
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Testing separate individuals oublogs"
     And I should see "There are no visible posts in this blog"
     Given I press "New blog post"
@@ -76,7 +76,7 @@ Feature: Test Post and Comment on Seperate Individual Blogs
 
     # Student2 user posts
     Given I log in as "student2"
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Testing separate individuals oublogs"
     Then I should see "There are no visible posts in this blog"
     Given I press "New blog post"
@@ -98,7 +98,7 @@ Feature: Test Post and Comment on Seperate Individual Blogs
     # Teacher check visibility
     Given I log in as "teacher1"
     And I am on homepage
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Testing separate individuals oublogs"
     Then I should see "SC05 student2 post01"
     And I should see "SC05 student2 post01 content"
