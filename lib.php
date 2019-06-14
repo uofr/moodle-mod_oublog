@@ -62,6 +62,10 @@ function oublog_add_instance($oublog) {
     }
     oublog_grade_item_update($oublog);
 
+    // add calendar event for completion tracking
+    $completiontimeexpected = !empty($oublog->completionexpected) ? $oublog->completionexpected : null;
+    \core_completion\api::update_completion_date_event($oublog->coursemodule, 'oublog', $oublog->id, $completiontimeexpected);
+
     return($oublog->id);
 }
 
@@ -102,6 +106,9 @@ function oublog_update_instance($oublog) {
     }
 
     oublog_grade_item_update($oublog);
+
+    $completiontimeexpected = !empty($oublog->completionexpected) ? $oublog->completionexpected : null;
+    \core_completion\api::update_completion_date_event($oublog->coursemodule, 'oublog', $oublog->id, $completiontimeexpected);
 
     return(true);
 }
@@ -166,6 +173,8 @@ function oublog_delete_instance($oublogid) {
     }
 
     oublog_grade_item_delete($oublog);
+
+    \core_completion\api::update_completion_date_event($cm->id, 'oublog', $id, null);
 
     // oublog
     return($DB->delete_records('oublog', array('id'=>$oublog->id)));
@@ -1521,4 +1530,38 @@ function oublog_get_user_grades($oublog, $userid = 0) {
         }
     }
     return $results;
+}
+
+/**
+ * This function receives a calendar event and returns the action associated with it, or null if there is none.
+ *
+ * This is used by block_myoverview in order to display the event appropriately. If null is returned then the event
+ * is not displayed on the block.
+ *
+ * @param calendar_event $event
+ * @param \core_calendar\action_factory $factory
+ * @param int $userid ID override for calendar events
+ * @return \core_calendar\local\event\entities\action_interface|null
+ */
+function mod_oublog_core_calendar_provide_event_action(calendar_event $event, \core_calendar\action_factory $factory, $userid = 0) {
+
+    global $USER;
+    if (empty($userid)) {
+        $userid = $USER->id;
+    }
+
+    $cm = get_fast_modinfo($event->courseid, $userid)->instances['oublog'][$event->instance];
+
+    $completion = new \completion_info($cm->get_course());
+    $completiondata = $completion->get_data($cm, false, $userid);
+    if ($completiondata->completionstate != COMPLETION_INCOMPLETE) {
+        return null;
+    }
+
+    return $factory->create_instance(
+        get_string('view'),
+        new \moodle_url('/mod/oublog/view.php', ['id' => $cm->id]),
+        1,
+        true
+    );
 }
