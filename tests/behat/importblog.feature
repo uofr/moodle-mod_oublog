@@ -31,7 +31,7 @@ Feature: Test import posts function for blog
       | Title      | Post 0 title                        |
       | Message    | Post 0 message                      |
       | Tags       | C#, Java                            |
-      | Attachment | lib/tests/fixtures/upload_users.csv |
+    And I upload "lib/tests/fixtures/upload_users.csv" file to "Attachments" filemanager (OU themes)
     And I press "Add post"
     When I follow "Add your comment"
     And I set the following fields to these values:
@@ -51,7 +51,7 @@ Feature: Test import posts function for blog
       | Tags    | JS, PHP        |
     And I press "Add post"
 
-  @javascript
+  @javascript @_file_upload
   Scenario: Display import selected posts and import blog links for each blog that has post.
     Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"
@@ -61,7 +61,7 @@ Feature: Test import posts function for blog
     Then I should see "Import selected posts"
     Then I should see "Import blog"
 
-  @javascript
+  @javascript @_file_upload
   Scenario: Navigate to post listing page when clicking on import selected posts link.
     Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"
@@ -88,7 +88,7 @@ Feature: Test import posts function for blog
     Then I should see "Post 0 comment 2"
     Then I should see "Post 0 Comment 2 message"
 
-  @javascript
+  @javascript @_file_upload
   Scenario: Perform the import all posts of the selected blog when clicking on import blog link.
     Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"
@@ -110,7 +110,7 @@ Feature: Test import posts function for blog
     Then I should see "Post 0 comment 2"
     Then I should see "Post 0 Comment 2 message"
 
-  @javascript
+  @javascript @_file_upload
   Scenario: Perform the import all posts again to should see confirm duplicate posts.
     Given I am on "Course 1" course homepage
     And I follow "student 1 blog two"

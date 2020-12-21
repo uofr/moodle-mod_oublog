@@ -392,7 +392,7 @@ Feature: Test Post and Comment on OUBlog entry
     Then I should see "P0" in the ".oublog-post.oublog-even .oublog-post-content" "css_element"
     And I should see "P1" in the ".oublog-post.oublog-odd .oublog-post-content" "css_element"
 
-  @javascript
+  @javascript @_file_upload
   Scenario: Check tag sorting and filter by tag as student
     Given I log in as "teacher1"
     And I am on homepage
@@ -548,10 +548,10 @@ Feature: Test Post and Comment on OUBlog entry
     Then "#oublog-links form" "css_element" should exist
     And "Personal blog link2" "link" should exist
 
-    Given I click on "//aside[@id='oublog-links']//li[2]//input[@type='image']" "xpath_element"
+    Given I click on "form[title='Move up'] input[type=image]" "css_element" in the "Teachers Personal blog link2" "list_item"
 
-    Then I should see "Teachers Personal blog link2" in the "//aside[@id='oublog-links']//li[1]//a[1]" "xpath_element"
-    Given I click on "//aside[@id='oublog-links']//li[1]//a[@title='Delete']" "xpath_element"
+    Then I should see "Teachers Personal blog link2" in the "//section[@id='oublog-links']//li[1]//a[1]" "xpath_element"
+    Given I click on "Delete" "link" in the "Teachers Personal blog link2" "list_item"
     When I press "Continue"
     Then I should not see "Teachers Personal blog link2"
     And "#oublog-links form" "css_element" should not exist
@@ -730,3 +730,51 @@ Feature: Test Post and Comment on OUBlog entry
     Given I am on "Course 1" course homepage
     When I follow "B.VG"
     Then I should see "P2"
+
+  Scenario: Check filter label in tag block
+    Given I log in as "teacher1"
+    And I am on homepage
+    And I am on "Course 1" course homepage
+    And I follow "Test oublog basics"
+    And I press "New blog post"
+    And I set the following fields to these values:
+      | Title   | Teacher1 blog  |
+      | Message | Teacher1 post  |
+      | Tags    | tag1           |
+    And I press "Add post"
+    And I press "New blog post"
+    And I set the following fields to these values:
+      | Title   | Teacher1 blog 2 |
+      | Message | Teacher1 post 2 |
+      | Tags    | tag2            |
+    When I press "Add post"
+    Then I should see "Teacher1 blog" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+    And I should see "Teacher1 blog 2" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+    When I follow "tag1"
+    Then I should see "tag1" in the ".oublog-filter-tagname" "css_element"
+    And I should not see "tag2" in the ".oublog-filter-tagname" "css_element"
+    And I should see "Teacher1 blog" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+    And I should not see "Teacher1 blog 2" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+    When I follow "tag2"
+    Then I should see "tag2" in the ".oublog-filter-tagname" "css_element"
+    And I should see "Teacher1 blog 2" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+    When I click on "#close-filter-icon" "css_element"
+    Then I should see "Teacher1 blog" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+    And I should see "Teacher1 blog 2" in the "div.oublog-post-top-details h2.oublog-title" "css_element"
+
+  Scenario: Check view count is reset on restore
+    Given I log in as "student1"
+    And I am on "Course 1" course homepage
+    And I follow "Test oublog basics"
+    Then I should see "Total visits to this blog: 1"
+    And I log out
+    Given I log in as "admin"
+    And I am on "Course 1" course homepage
+    And I follow "Test oublog basics"
+    Then I should see "Total visits to this blog: 2"
+    Given I am on "Course 1" course homepage
+    And I turn editing mode on
+    And I duplicate "Test oublog basics" activity editing the new copy with:
+      | Blog name | Test oublog basics - duplicate |
+    And I follow "Test oublog basics - duplicate"
+    Then I should see "Total visits to this blog: 1"

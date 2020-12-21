@@ -114,11 +114,11 @@ $string['sharedblog'] = 'Shared blog';
 $string['sharedblog_invalid'] = 'No matching ID number';
 $string['sharedblog_invalid_morethan1'] = 'More than 1 matching ID number';
 $string['sharedblog_existed'] = 'This is an ID number of a child blog';
-$string['sharedblog_mastered'] = 'This blog is already a master blog';
+$string['sharedblog_mastered'] = 'This blog is already a parent blog';
 $string['sharedblog_error'] = 'Error – no blog with that ID is available';
 $string['sharedblog_help'] = '<p><strong>Shared blog</strong></p>
-<p>This option allows the blog instance to act as a ‘child’ blog and display the content of a ‘master’ blog.</p>
-<p>Please input the IDNumber field value of \'master\' blog whose content you wish this blog to display</p>';
+<p>This option allows the blog instance to act as a ‘child’ blog and display the content of a ‘parent’ blog.</p>
+<p>Please input the IDNumber field value of \'parent\' blog whose content you wish this blog to display</p>';
 $string['displayname_default'] = 'blog';
 $string['displayname'] = 'Alternate activity name (blank uses default)';
 $string['displayname_help'] = 'Set an alternate activity type name within the interface.
@@ -145,7 +145,7 @@ $string['delete'] = 'Delete';
 $string['olderposts'] = 'Previous posts';
 $string['newerposts'] = 'Newer posts';
 $string['extranavolderposts'] = 'Older posts: {$a->from}-{$a->to}';
-$string['extranavtag'] = 'Tag: {$a}';
+$string['extranavtag'] = 'Filter: {$a}';
 
 $string['comments'] = 'Comments';
 $string['recentcomments'] = 'Recent comments';
@@ -599,6 +599,8 @@ access the Edit page again and then paste in your changes.</p>';
 $string['order'] = 'Order:';
 $string['alpha'] = 'A to Z';
 $string['use'] = 'Most used';
+$string['filter'] = 'Filter:';
+$string['filter-tooltip'] = 'Click to remove filter tag';
 $string['order_help'] = 'You can choose to order the display of the list of tags used,
 either in alphabetical order or by number of posts used in.
 Select the two links to switch between ordering methods,
@@ -734,3 +736,5 @@ $string['export:header_title'] = 'Title';
 $string['export:header_date_posted'] = 'Date posted';
 $string['export:header_tags'] = 'Tags';
 $string['export:header_author'] = 'Author';
+$string['tagshowmore'] = 'Show more ...';
+$string['tagshowless'] = 'Show less ...';
