@@ -130,10 +130,10 @@ if ($correctglobal) {
     if (!is_null($oubloginstance)) {
         $name = $oubloginstance->name;
         $buttontext = oublog_get_search_form('user', $oubloguser->id, $strblogsearch,
-                $querytexthtml);
+                $querytexthtml, false, $cmid);
     } else {
         $buttontext = oublog_get_search_form('id', $cm->id, $strblogssearch,
-                $querytexthtml);
+                $querytexthtml, false, $cmid);
     }
 
     if (isset($name)) {
@@ -145,8 +145,7 @@ if ($correctglobal) {
 
 } else {
     $name = !empty($childoublog->name) ? $childoublog->name : $oublog->name;
-
-    $buttontext = oublog_get_search_form('id', $cm->id, $strblogsearch, $querytexthtml);
+    $buttontext = oublog_get_search_form('id', $cm->id, $strblogsearch, $querytexthtml, false, $cmid);
 }
 
 $PAGE->navbar->add(get_string('searchfor', 'local_ousearch', $querytext));
@@ -206,17 +205,6 @@ if ($cmid) {
     $foundsomething = oublog_add_cmid_to_tag_atrribute($cmid, $foundsomething, 'a', 'href', '&');
 }
 echo $foundsomething;
-
-// Add link to search the rest of this website if service available.
-if (!empty($CFG->block_resources_search_baseurl)) {
-    $params = array('course' => $course->id, 'query' => $querytext);
-    $restofwebsiteurl = new moodle_url('/blocks/resources_search/search.php', $params);
-    $strrestofwebsite = get_string('restofwebsite', 'local_ousearch');
-    $altlink = html_writer::start_tag('div', array('class' => 'advanced-search-link'));
-    $altlink .= html_writer::link($restofwebsiteurl, $strrestofwebsite);
-    $altlink .= html_writer::end_tag('div');
-    print $altlink;
-}
 
 // Footer
 echo $OUTPUT->footer();

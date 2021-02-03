@@ -1,7 +1,8 @@
 #oublog-tags a {
     text-decoration:none;
 }
-#oublog-tags a:hover .oublog-tagname{
+#oublog-tags a:hover .oublog-tagname,
+.oublog-filter-tag-item a:hover .oublog-filter-tagname {
     text-decoration:underline;
 }
 .oublog-sideblock a:hover,
@@ -11,13 +12,6 @@
 .oublog-post-bottom a:hover,
 .oublog-paging a:hover,
 .oublog-postedby a:hover {
-    text-decoration:underline;
-}
-
-#oublog-feeds a {
-    text-decoration:none;
-}
-#oublog-feeds a:hover .oublog-tagname{
     text-decoration:underline;
 }
 
@@ -745,7 +739,26 @@ div.tagselector_result .tagselector_result_info {
 .oublog-export_instance button[name="oublog-export-selected"] {
     margin-left: 10px;
 }
-.oublog-post-content img {
-    height: auto;
-    max-width: 100%;
+
+.oublog-filter-tag-item {
+    font-weight: normal;
+}
+
+.oublog-filter-tagname,
+oublog-filter-tagcount {
+    font-size: 1em;
+}
+
+.close-filter-icon {
+    width: 18px;
+    height: 18px;
+    float: right;
+}
+.mod-oublog-tags-show-more,
+.mod-oublog-tags-show-less {
+    display: inline-block;
+}
+
+.gecko #oublog-tags {
+    display: block;
 }

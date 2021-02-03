@@ -1126,8 +1126,6 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     if (!$forexport) {
                         $output .= '<a href="deletecomment.php?comment=' .
                                 $comment->id . $cmparam . $referurlparam  . '">' . $strdelete.'</a>';
-                    } else {
-                        $output .= $strdelete;
                     }
                 }
             }
@@ -1744,12 +1742,12 @@ EOF;
         if (!empty($issharedblog) && $issharedblog) {
             $sharemode = true;
             $extraparams['cmid'] = $childcmid;
+            $masterblog = $oublog;
+            $childdata = oublog_get_blog_data_base_on_cmid_of_childblog($childcmid, $masterblog);
+            $oublog = $childdata['ousharedblog'];
+            $cm = $childdata['cm'];
         }
-
-        // Call early to cache group mode - stops debugging warning from oublog_get_posts later.
-        $cm->activitygroupmode = oublog_get_activity_groupmode($cm, $COURSE);
         $context = context_module::instance($cm->id);
-        $modcontext = $context;
         if (empty($oubloguserid)) {
             $oubloguserid = null;
         }
@@ -1758,7 +1756,7 @@ EOF;
         }
         list($posts, $recordcount) = oublog_get_posts($oublog,
                 $context, $offset, $cm, $currentgroup, $currentindividual,
-                $oubloguserid, null, $canaudit, null, null, OUBLOG_POSTS_PER_PAGE_EXPORT, $orderby);
+                $oubloguserid, null, $canaudit, null, $masterblog, OUBLOG_POSTS_PER_PAGE_EXPORT, $orderby);
         $data = [];
         foreach ($posts as $post) {
             $onerow = [];
@@ -1867,6 +1865,42 @@ EOF;
         return $output;
     }
 
+    /**
+     * Render html current filter tag.
+     *
+     * @param $tag current filter tag
+     * @return html
+     * @throws coding_exception
+     * @throws moodle_exception
+     */
+    public function render_current_filter($tag, $baseurl) {
+        $output = '';
+        $baseurl = oublog_replace_url_param($baseurl, 'tag');
+        $closefiltericon = html_writer::empty_tag('img',
+                ['src' => $this->output->image_url('close_button_rgb_30px', 'oublog'), 'class' => 'close-filter-icon']);
+        $output .= html_writer::start_tag('div', ['class' => 'oublog-filter-tag clearfix']);
+        $output .= get_string('filter', 'oublog');
+        $output .= "&nbsp;";
+
+        $output .= html_writer::start_tag('span', ['class' => 'oublog-filter-tag-item']);
+        $output .= html_writer::start_tag('a',
+                ['href' => $baseurl . '&tag=' . urlencode($tag->tag), 'class' => 'oublog-filter-tag-cloud-' . $tag->weight]);
+        $output .= html_writer::start_tag('span', ['class' => 'oublog-filter-tagname']);
+        $output .= strtr(($tag->tag), [' ' => '&nbsp;']);
+        $output .= html_writer::end_tag('span');
+        $output .= html_writer::start_tag('span', ['class' => 'oublog-filter-tagcount']);
+        $output .= ' (' . $tag->count . ')';
+        $output .= html_writer::end_tag('span');
+        $output .= html_writer::end_tag('a');
+        $output .= html_writer::end_tag('span');
+
+        $output .= html_writer::tag('a', $closefiltericon,
+                ['href' => $baseurl, 'title' => get_string('filter-tooltip', 'oublog'),
+                        'id' => 'close-filter-icon']);
+        $output .= html_writer::end_tag('div');
+
+        return $output;
+    }
 }
 
 class oublog_statsinfo implements renderable {

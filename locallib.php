@@ -88,6 +88,7 @@ define('OUBLOG_POSTS_PER_PAGE_EXPORT', 50);
  * Constant defining the max length of tags
  */
 define('OUBLOG_EXPORT_TAGS_LENGTH', 40);
+define('OUBLOG_TAGS_SHOW', 500);
 
 /**
  * Get a blog from a user id
@@ -1046,7 +1047,7 @@ function oublog_get_tags_csv($postid) {
  * @return array Tag data
  */
 function oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid=null, $individualid=-1, $tagorder = 'alpha',
-        $masterblog = null) {
+        $masterblog = null, $limit = null) {
     global $CFG, $DB, $USER;
     $tags = array();
     $params = array();
@@ -1100,9 +1101,16 @@ function oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid=null, $indivi
                 INNER JOIN {oublog_posts} p ON ti.postid = p.id
                 INNER JOIN {user} u ON u.id = bi.userid
             WHERE $sqlwhere
-            GROUP BY t.id, t.tag
-            ORDER BY count DESC";
-
+            GROUP BY t.id, t.tag";
+    if ($tagorder == 'alpha') {
+        $sort = ' ORDER BY t.tag ASC';
+    } else {
+        $sort = ' ORDER BY count DESC';
+    }
+    $sql = $sql . $sort;
+    if ($limit > -1) {
+        $sql = $sql . ' LIMIT ' . $limit;
+    }
     if ($tags = $DB->get_records_sql($sql, $params)) {
         $first = array_shift($tags);
         $max = $first->count;
@@ -1117,11 +1125,6 @@ function oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid=null, $indivi
         foreach ($tags as $idx => $tag) {
             $tags[$idx]->weight = round(($tag->count-$min)/$delta*4);
         }
-        if ($tagorder == 'alpha') {
-            uasort($tags, function($a, $b) {
-                return strcmp ($a->tag,  $b->tag);
-            });
-        }
     }
     return($tags);
 }
@@ -1129,7 +1132,7 @@ function oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid=null, $indivi
 
 
 /**
- * Print a tag cloud for a given blog or blog instance
+ * Print a tag cloud for a given blog or blog instance and return current filter object
  *
  * @param string $baseurl
  * @param int $oublogid
@@ -1137,27 +1140,51 @@ function oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid=null, $indivi
  * @param object $cm
  * @param int $oubloginstanceid
  * @param object $masterblog
- * @return string Tag cloud HTML
+ * @return array Tag cloud HTML, current filter tag
  */
 function oublog_get_tag_cloud($baseurl, $oublog, $groupid, $cm, $oubloginstanceid=null, $individualid=-1, $tagorder,
-        $masterblog = null) {
+        $masterblog = null, $limit = null) {
+    global $PAGE;
     $cloud = '';
+    $currenttag = $PAGE->url->get_param('tag');
+    $currentfiltertag = '';
     $urlparts= array();
 
     $baseurl = oublog_replace_url_param($baseurl, 'tag');
-    if (!$tags = oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid, $individualid, $tagorder, $masterblog)) {
-        return($cloud);
+    $baseurl = oublog_replace_url_param($baseurl, 'taglimit');
+
+    if (!$tags = oublog_get_tags($oublog, $groupid, $cm, $oubloginstanceid, $individualid, $tagorder, $masterblog, $limit)) {
+        return [$cloud, $currentfiltertag];
     }
 
     $cloud .= html_writer::start_tag('div', array('class' => 'oublog-tag-items'));
     foreach ($tags as $tag) {
-        $cloud .= '<a href="'.$baseurl.'&amp;tag='.urlencode($tag->tag).'" class="oublog-tag-cloud-'.
-            $tag->weight.'"><span class="oublog-tagname">'.strtr(($tag->tag), array(' '=>'&nbsp;')).
-            '</span><span class="oublog-tagcount">('.$tag->count.')</span></a> ';
+        if ($limit == -1) {
+            $cloud .= '<a href="'.$baseurl.'&amp;tag='.urlencode($tag->tag).
+                    '&amp;taglimit='. urlencode($limit) . '" class="oublog-tag-cloud-'.
+                    $tag->weight.'"><span class="oublog-tagname">'.strtr(($tag->tag), array(' '=>'&nbsp;')).
+                    '</span><span class="oublog-tagcount">('.$tag->count.')</span></a> ';
+        } else {
+            $cloud .= '<a href="'.$baseurl.'&amp;tag='.urlencode($tag->tag).'" class="oublog-tag-cloud-'.
+                    $tag->weight.'"><span class="oublog-tagname">'.strtr(($tag->tag), array(' '=>'&nbsp;')).
+                    '</span><span class="oublog-tagcount">('.$tag->count.')</span></a> ';
+        }
+
+        if (!is_null($currenttag) && $tag->tag == $currenttag) {
+            $currentfiltertag = $tag;
+        }
+    }
+    if (count($tags) >= OUBLOG_TAGS_SHOW && $limit != -1) {
+        $showmore = get_string('tagshowmore', 'oublog');
+        $cloud .= '<a href="'. $baseurl . '&amp;taglimit=-1" class="mod-oublog-tags-show-more">' . $showmore . '</a>';
+    }
+    if ($limit == -1) {
+        $showless = get_string('tagshowless', 'oublog');
+        $cloud .= '<a href="'. $baseurl . '&amp;taglimit=' . OUBLOG_TAGS_SHOW . '" class="mod-oublog-tags-show-less">' . $showless . '</a>';
     }
     $cloud .= html_writer::end_tag('div');
 
-    return($cloud);
+    return [$cloud, $currentfiltertag];
 }
 
 /**
@@ -1332,8 +1359,8 @@ function oublog_update_views($oublog, $oubloginstance, $userid = null, $groupid 
 
 /**
  * Get views of group's post.
- * 
- * @param  int $oublogid 
+ *
+ * @param  int $oublogid
  * @param  int $groupid
  * @return int
  */
@@ -1865,61 +1892,6 @@ function oublog_get_feedurl($format, $oublog, $bloginstance, $groupid, $comments
     }
 
     return($url);
-}
-
-
-
-/**
- * Get a block containing links to the Atom and RSS feeds
- *
- * @param object $oublog
- * @param object $bloginstance
- * @param int $groupid
- * @param int $postid
- * @param object $context
- * @param object $masterblog
- * @return string HTML of block
- * @uses $CFG
- */
-function oublog_get_feedblock($oublog, $bloginstance, $groupid, $postid, $cm, $individualid=-1, $masterblog = null) {
-    global $CFG, $OUTPUT;
-
-    if (!$CFG->enablerssfeeds) {
-        return(false);
-    }
-    // Check master blog.
-    $feedoublog = !empty($masterblog) ? $masterblog : $oublog;
-    $childoublog = !empty($masterblog) ? $oublog : null;
-
-    $blogurlatom = oublog_get_feedurl('atom', $feedoublog, $bloginstance, $groupid, false, false, $cm, $individualid, $childoublog);
-    $blogurlrss = oublog_get_feedurl('rss', $feedoublog, $bloginstance, $groupid, false, false, $cm, $individualid, $childoublog);
-
-    if (!is_string($bloginstance)) {
-        $commentsurlatom = oublog_get_feedurl('atom', $feedoublog, $bloginstance, $groupid, true, $postid, $cm, $individualid, $childoublog);
-        $commentsurlrss = oublog_get_feedurl('rss', $feedoublog, $bloginstance, $groupid, true, $postid, $cm, $individualid, $childoublog);
-    }
-
-    $html  = '<div id="oublog-feedtext">' . get_string('subscribefeed', 'oublog', oublog_get_displayname($oublog));
-    $html .= $OUTPUT->help_icon('feedhelp', 'oublog');
-    $html .= '</div>';
-    $html .= '<div class="oublog-feedlinks">';
-    $html .= '<span class="oublog-feedlinks-feedtitle">' . get_string('blogfeed', 'oublog', oublog_get_displayname($oublog, true)) . ': </span>';
-    $html .= '<span class="oublog-feedlinks-feedtype">';
-    $html .= '<br/><a href="'.$blogurlatom.'">'.get_string('atom', 'oublog').'</a> ';
-    $html .= '<br/><a href="'.$blogurlrss.'">'.get_string('rss', 'oublog').'</a>';
-    $html .= '</span>';
-
-    if ($oublog->allowcomments) {
-        if (!is_string($bloginstance)) {
-            $html .= '<div class="oublog-links">';
-            $html .= '<span class="oublog-feedcommentlinks-feedtitle">'.get_string('commentsfeed', 'oublog') . ': </span>';
-            $html .= '<br/><a href="'.$commentsurlatom.'">'.get_string('comments', 'oublog').' '.get_string('atom', 'oublog').'</a> ';
-            $html .= '<br/><a href="'.$commentsurlrss.'">'.get_string('comments', 'oublog').' '.get_string('rss', 'oublog').'</a>';
-            $html .= '</div>';
-        }
-    }
-    $html .= '</div>';
-    return ($html);
 }
 
 
@@ -2999,9 +2971,9 @@ function oublog_add_cmid_to_tag_atrribute($cmid, $html, $tag, $attribute, $param
     global $CFG;
     // We should add cmid for image in shared blog.
     $doc = new DOMDocument();
-    @$doc->loadHTML($html);
+    @$doc->loadHTML('<?xml version="1.0" encoding="utf-8" ?>' . $html);
     $tags = $doc->getElementsByTagName($tag);
-    if (!empty($tags)) {
+    if ($tags->length) {
         foreach ($tags as $tag) {
             // It should be internal image.
             if (strpos($tag->getAttribute($attribute), $CFG->wwwroot) !== false) {
@@ -3009,7 +2981,13 @@ function oublog_add_cmid_to_tag_atrribute($cmid, $html, $tag, $attribute, $param
                 $tag->setAttribute($attribute, $newattr);
             }
         }
-        $html = $doc->saveHTML();
+        // Grab tags from body only otherwise we get whole doc or body tag included.
+        $body = $doc->getElementsByTagName('body')->item(0);
+        $html = '';
+        foreach ($body->childNodes as $node) {
+            // Add each tag in body to the output.
+            $html .= $doc->saveHTML($node);
+        }
     }
     return $html;
 }
@@ -3290,16 +3268,16 @@ class oublog_portfolio_caller extends portfolio_module_caller_base {
  * @param string $strblogsearch search this blog text
  * @param string $querytext optional search term
  * @param bool $newsearchimage optional param to display a different image..
+ * @param int $cmid cmid of shared blog.
  * @returns string html
  */
-function oublog_get_search_form($name, $value, $strblogsearch, $querytext='', $newsearchimage = false) {
+function oublog_get_search_form($name, $value, $strblogsearch, $querytext='', $newsearchimage = false, $cmid = null) {
     if (!oublog_search_installed()) {
         return '';
     }
     global $OUTPUT, $DB;
 
     // Check if search in shared blog.
-    $cmid = null;
     if ($name == 'id') {
         $cm = get_coursemodule_from_id('oublog', $value);
         $oublog = $DB->get_record('oublog', ['id' => $cm->instance]);
@@ -3609,13 +3587,13 @@ function oublog_get_user_participation($oublog, $context,
     $user = $DB->get_record('user', array('id' => $userid), $fields, MUST_EXIST);
     $participation = new stdClass();
     $participation->user = $user;
-    $participation->numposts = $DB->get_field_sql("SELECT COUNT(1) FROM ($postssql) as p", $params);
+    $participation->numposts = $DB->get_field_sql("SELECT COUNT(1) FROM ($postssql) p", $params);
     if ($getposts) {
         $participation->posts = $DB->get_records_sql($postssql . $postsqlorder, $params, $limitfrom, $limitnum);
     } else {
         $participation->posts = array();
     }
-    $participation->numcomments = $DB->get_field_sql("SELECT COUNT(1) FROM ($commentssql) as p", $params);
+    $participation->numcomments = $DB->get_field_sql("SELECT COUNT(1) FROM ($commentssql) p", $params);
     if ($getcomments) {
         $participation->comments = $DB->get_records_sql($commentssql . $commentsqlorder, $params, $limitfrom, $limitnum);
     } else {
@@ -3888,7 +3866,7 @@ function oublog_stats_output_poststats($oublog, $cm, $renderer = null, $ajax = f
         $sql = "SELECT p.groupid, count(p.id) as posts
                     FROM {oublog_posts} p
                     JOIN {oublog_instances} bi on p.oubloginstancesid = bi.id
-                    JOIN {groups} as g on g.id = p.groupid
+                    JOIN {groups} g on g.id = p.groupid
                     WHERE bi.oublogid = ?
                     AND p.deletedby IS NULL AND p.timeposted >= ?
                     AND p.groupid > 0
@@ -3941,7 +3919,7 @@ function oublog_stats_output_poststats($oublog, $cm, $renderer = null, $ajax = f
               WHERE bi2.oublogid = ?
               AND p.deletedby IS NULL AND p.timeposted >= ? $subwhere
               GROUP BY p.oubloginstancesid
-        ) as pos on pos.oubloginstancesid = bi.id
+        ) pos on pos.oubloginstancesid = bi.id
         ORDER BY posts DESC";
     }
     $blogs = $DB->get_records_sql($sql, $params, 0, 5);
@@ -4085,7 +4063,7 @@ function oublog_stats_output_commentstats($oublog, $cm, $renderer = null, $ajax 
             FROM {oublog_comments} c
             JOIN {oublog_posts} p on p.id = c.postid
             JOIN {oublog_instances} bi on p.oubloginstancesid = bi.id
-            JOIN {groups} as g on g.id = p.groupid
+            JOIN {groups} g on g.id = p.groupid
             WHERE bi.oublogid = ?
             AND p.groupid > 0
             AND p.deletedby IS NULL
@@ -4146,7 +4124,7 @@ function oublog_stats_output_commentstats($oublog, $cm, $renderer = null, $ajax 
             AND c.deletedby IS NULL AND c.timeposted >= ?
             AND (c.userid <> bi2.userid OR c.userid IS NULL)
             GROUP BY p.oubloginstancesid
-        ) as pos on pos.oubloginstancesid = bi.id
+        ) pos on pos.oubloginstancesid = bi.id
         ORDER BY comments DESC";
     }
     $blogs = $DB->get_records_sql($sql, $params, 0, 5);
@@ -4361,7 +4339,7 @@ function oublog_stats_output_commentpoststats($oublog, $cm, $renderer = null, $a
             AND c.deletedby IS NULL AND c.timeposted >= ?
             AND (c.userid <> bi2.userid OR c.userid IS NULL)
             GROUP BY p.id
-        ) as pos on pos.pid = posts.id
+        ) pos on pos.pid = posts.id
         JOIN {oublog_instances} bi on bi.id = posts.oubloginstancesid
         ORDER BY pos.comments DESC, posts.title ASC, posts.id DESC";
 
@@ -4941,13 +4919,13 @@ function oublog_get_participation_details($oublog, $groupid, $individual,
             'allowcomments' => $allowcomments
     );
     $participation = new stdClass();
-    $participation->postscount = $DB->get_field_sql("SELECT COUNT(1) FROM ($postssql) as p", $params);
+    $participation->postscount = $DB->get_field_sql("SELECT COUNT(1) FROM ($postssql) p", $params);
     if ($getposts) {
         $participation->posts = $DB->get_records_sql($postssql . $postssqlorder, $params, $limitfrom, $limitnum);
     } else {
         $participation->posts = array();
     }
-    $participation->commentscount = $DB->get_field_sql("SELECT COUNT(1) FROM ($commentssql) as p", $params);
+    $participation->commentscount = $DB->get_field_sql("SELECT COUNT(1) FROM ($commentssql) p", $params);
     if ($getcomments) {
         $participation->comments = $DB->get_records_sql($commentssql . $commentsqlorder, $params, $limitfrom, $limitnum);
     } else {
@@ -5561,7 +5539,7 @@ function oublog_import_getallposts($blogid, $sort, $userid = 0, $page = 0, $tags
         list($taginwhere, $tagparams) = $DB->get_in_or_equal($tagarr);
         $tagjoin = "INNER JOIN (
         SELECT ti.postid, count(*) as tagcount FROM {oublog_taginstances} ti WHERE ti.tagid $taginwhere
-        group by ti.postid) as hastags on hastags.postid = p.id";
+        group by ti.postid) hastags on hastags.postid = p.id";
         $tagwhere = 'AND hastags.tagcount = ?';
         $sqlparams = array_merge($tagparams, $sqlparams, array(count($tagarr)));
         // Get selected tag names.
@@ -5596,7 +5574,7 @@ function oublog_import_getallposts($blogid, $sort, $userid = 0, $page = 0, $tags
         }
         $rs->close();
         // Add total record count.
-        $total = $DB->get_field_sql('SELECT count(tot.id) FROM (' . $sql . ') as tot', $sqlparams);
+        $total = $DB->get_field_sql('SELECT count(tot.id) FROM (' . $sql . ') tot', $sqlparams);
     }
     return array($posts, $total, $tagnames);
 }
