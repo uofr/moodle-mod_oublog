@@ -29,10 +29,19 @@ class mod_oublog_comment_form extends moodleform {
         $blogid = $this->_customdata['blogid'];
         $postid = $this->_customdata['postid'];
         $maxbytes = $this->_customdata['maxbytes'];
-
+        $postrender = $this->_customdata['postrender'];
+        $referurl =  $this->_customdata['referurl'];
+        $cmid = $this->_customdata['cmid'];
         $mform    =& $this->_form;
 
+        if (!$edit) {
+            $mform->addElement('header', 'posttext', get_string('postmessage', 'oublog'));
+            $mform->setExpanded('posttext', false);
+            $mform->addElement('html', $postrender);
+        }
+
         $mform->addElement('header', 'general', '');
+        $mform->setExpanded('general', true);
 
         if ($moderated) {
             $mform->addElement('static', '', '',
@@ -69,6 +78,7 @@ class mod_oublog_comment_form extends moodleform {
             $mform->addElement('static', '', '',
                     get_string('moderated_confirminfo', 'oublog'));
             $mform->addElement('text', 'confirm', get_string('moderated_confirm', 'oublog'));
+            $mform->setType('confirm', PARAM_TEXT);
         }
 
         if ($edit) {
@@ -85,6 +95,13 @@ class mod_oublog_comment_form extends moodleform {
 
         $mform->addElement('hidden', 'post');
         $mform->setType('post', PARAM_INT);
+
+        $mform->addElement('hidden', 'referurl', $referurl);
+        $mform->setType('referurl', PARAM_LOCALURL);
+
+        $mform->addElement('hidden', 'cmid', $cmid);
+        $mform->setType('cmid', PARAM_INT);
+
     }
 
     public function validation($data, $files) {

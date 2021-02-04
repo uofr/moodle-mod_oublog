@@ -15,30 +15,25 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Pretends to wrap transactions. In fact does nothing. If you want a
- * real implementation of this, the OU have one, it goes in /local.
- * @copyright &copy; 2007 The Open University
- * @author s.marshall@open.ac.uk
- * @license http://www.gnu.org/copyleft/gpl.html GNU Public License
- * @package ouwiki
+ * The mod_oublog instance list viewed event.
+ *
+ * @package    mod_oublog
+ * @copyright  2014 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class transaction_wrapper {
 
-    public function __construct(&$localdb=false) {
-    }
+namespace mod_oublog\event;
 
-    public function complete($ok=true) {
-        return $ok;
-    }
+defined('MOODLE_INTERNAL') || die();
 
-    public function commit() {
-        return true;
-    }
-
-    public function rollback() {
-    }
-
-    public static function is_in_transaction() {
-        return false;
-    }
+/**
+ * The mod_oublog instance list viewed event class.
+ *
+ * @package    mod_oublog
+ * @since      Moodle 2.7
+ * @copyright  2014 The Open University
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+class course_module_instance_list_viewed extends \core\event\course_module_instance_list_viewed {
+    // No need for any code here as everything is handled by the parent class.
 }

@@ -42,7 +42,7 @@ if ($id) {
 
     $PAGE->set_cm($cm);
 }
-$context = get_context_instance(CONTEXT_MODULE, $cm->id);
+$context = context_module::instance($cm->id);
 require_course_login($course, true, $cm);
 require_sesskey();
 
@@ -67,9 +67,9 @@ if (!empty($_POST['menu'])) {
     $oldgrades = array($userid => $user);
 }
 
-// update grades
+// Update grades.
 if (!empty($gradeinfo)) {
-    oublog_update_grades($gradeinfo, $oldgrades, $cm, $oublog, $course);
+    oublog_update_manual_grades($gradeinfo, $oldgrades, $cm, $oublog, $course);
 }
 
 // redirect

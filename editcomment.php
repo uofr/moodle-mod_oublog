@@ -29,6 +29,8 @@ define('OUBLOG_CONFIRMED_COOKIE', 'OUBLOG_REALPERSON');
 $blog = required_param('blog', PARAM_INT);              // Blog ID
 $postid = required_param('post', PARAM_INT);            // Post ID for editing
 $commentid = optional_param('comment', 0, PARAM_INT);   // Comment ID for editing
+$cmid = optional_param('cmid', null, PARAM_INT);
+$referurl = optional_param('referurl', 0, PARAM_LOCALURL);
 
 if (!$oublog = $DB->get_record("oublog", array("id"=>$blog))) {
     print_error('invalidblog', 'oublog');
@@ -39,7 +41,7 @@ if (!$cm = get_coursemodule_from_instance('oublog', $blog)) {
 if (!$course = $DB->get_record("course", array("id"=>$oublog->course))) {
     print_error('coursemisconf');
 }
-if (!$post = $DB->get_record('oublog_posts', array('id'=>$postid))) {
+if (!$post = oublog_get_post($postid)) {
     print_error('invalidpost', 'oublog');
 }
 if (!$oubloginstance = $DB->get_record('oublog_instances', array('id'=>$post->oubloginstancesid))) {
@@ -49,25 +51,37 @@ $url = new moodle_url('/mod/oublog/editcomment.php', array('blog'=>$blog, 'post'
 $PAGE->set_url($url);
 
 // Check security.
-$context = get_context_instance(CONTEXT_MODULE, $cm->id);
-
-oublog_check_view_permissions($oublog, $context, $cm);
+$context = context_module::instance($cm->id);
+$childdata = oublog_get_blog_data_base_on_cmid_of_childblog($cmid, $oublog);
+$childcm = null;
+$childcourse = null;
+$childoublog = null;
+if (!empty($childdata)) {
+    $context = $childdata['context'];
+    $childcm = $childdata['cm'];
+    $childcourse = $childdata['course'];
+    $childoublog = $childdata['ousharedblog'];
+    oublog_check_view_permissions($childdata['ousharedblog'], $childdata['context'], $childdata['cm']);
+} else {
+    oublog_check_view_permissions($oublog, $context, $cm);
+}
+$correctglobal = isset($childoublog->global) ? $childoublog->global : $oublog->global;
 $post->userid=$oubloginstance->userid; // oublog_can_view_post needs this
-if (!oublog_can_view_post($post, $USER, $context, $oublog->global)) {
+if (!oublog_can_view_post($post, $USER, $context, $cm, $oublog, $childcm, $childoublog)) {
     print_error('accessdenied', 'oublog');
 }
 
-oublog_get_activity_groupmode($cm, $course);
-if (!oublog_can_comment($cm, $oublog, $post)) {
+oublog_get_activity_groupmode($childcm ? $childcm : $cm, $childcourse ? $childcourse : $course);
+if (!oublog_can_comment($childcm ? $childcm : $cm, $childoublog ? $childoublog : $oublog, $post)) {
     print_error('accessdenied', 'oublog');
 }
 
-if ($oublog->allowcomments == OUBLOG_COMMENTS_PREVENT || $post->allowcomments == OUBLOG_COMMENTS_PREVENT) {
+if ($oublog->allowcomments == OUBLOG_COMMENTS_PREVENT || $post->allowcomments == OUBLOG_COMMENTS_PREVENT ||
+    (!empty($childoublog->allowcomments) && $childoublog->allowcomments == OUBLOG_COMMENTS_PREVENT)) {
     print_error('commentsnotallowed', 'oublog');
 }
-
-$viewurl = 'viewpost.php?post='.$post->id;
-if ($oublog->global) {
+$viewurl = !empty($referurl) ? $referurl : new moodle_url('/mod/oublog/viewpost.php', array('post' => $post->id));
+if ($correctglobal) {
     $blogtype = 'personal';
     if (!$oubloguser = $DB->get_record('user', array('id'=>$oubloginstance->userid))) {
         print_error('invaliduserid');
@@ -75,6 +89,8 @@ if ($oublog->global) {
 } else {
     $blogtype = 'course';
 }
+
+$renderer = $PAGE->get_renderer('mod_oublog');
 
 // Get strings.
 $stroublogs  = get_string('modulenameplural', 'oublog');
@@ -86,21 +102,26 @@ $confirmed = isset($_COOKIE[OUBLOG_CONFIRMED_COOKIE]) &&
         $_COOKIE[OUBLOG_CONFIRMED_COOKIE] == get_string(
             'moderated_confirmvalue', 'oublog');
 $mform = new mod_oublog_comment_form('editcomment.php', array(
-        'maxvisibility' => $oublog->maxvisibility,
+        'maxvisibility' => $childoublog ? $childoublog->maxvisibility : $oublog->maxvisibility,
         'edit' => !empty($commentid),
         'blogid' => $blog,
         'postid' => $postid,
         'moderated' => $moderated,
         'confirmed' => $confirmed,
-        'maxbytes' => $oublog->maxbytes
+        'maxbytes' => $childoublog ? $childoublog->maxbytes : $oublog->maxbytes,
+        'referurl' => $referurl,
+        'cmid' => $cmid,
+        'postrender' => $renderer->render_post($childcm ? $childcm : $cm, $childoublog ? $childoublog : $oublog,
+            $post, $url, $blogtype, false, false, false,
+            false, false, true, 'top', $cm, $cmid),
         ));
 
 if ($mform->is_cancelled()) {
     redirect($viewurl);
     exit;
 }
-$PAGE->set_title(format_string($oublog->name));
-$PAGE->set_heading(format_string($course->fullname));
+$PAGE->set_title(format_string(!empty($childoublog->name) ? $childoublog->name : $oublog->name));
+$PAGE->set_heading(format_string(!empty($childcourse->fullname) ? $childcourse->fullname : $course->fullname));
 
 if (!$comment = $mform->get_data()) {
 
@@ -115,11 +136,11 @@ if (!$comment = $mform->get_data()) {
     if ($blogtype == 'personal') {
         oublog_build_navigation($oublog, $oubloginstance, $oubloguser);
     } else {
-        oublog_build_navigation($oublog, $oubloginstance, null);
+        oublog_build_navigation($childoublog ? $childoublog : $oublog, $oubloginstance, null);
         $url = new moodle_url("$CFG->wwwroot/course/mod.php", array('update' => $cm->id, 'return' => true, 'sesskey' => sesskey()));
     }
 
-    oublog_get_post_extranav($post);
+    oublog_get_post_extranav($post, true, $cmid);
     $PAGE->navbar->add($comment->general);
     echo $OUTPUT->header();
 
@@ -153,15 +174,15 @@ if (!$comment = $mform->get_data()) {
         }
         $approvaltime = oublog_get_typical_approval_time($post->userid);
 
-        oublog_build_navigation($oublog, $oubloginstance, isset($oubloguser) ? $oubloguser : null);
-        oublog_get_post_extranav($post);
+        oublog_build_navigation($childoublog ? $childoublog : $oublog, $oubloginstance, isset($oubloguser) ? $oubloguser : null);
+        oublog_get_post_extranav($post, true, $cmid);
         $PAGE->navbar->add(get_string('moderated_submitted', 'oublog'));
         echo $OUTPUT->header();
         notice(get_string('moderated_addedcomment', 'oublog') .
                 ($approvaltime ? ' ' .
                     get_string('moderated_typicaltime', 'oublog', $approvaltime)
                 : ''), 'viewpost.php?post=' . $postid, $course);
-        // does not continue
+        // Does not continue.
     }
 
     $comment->userid = $USER->id;
@@ -169,6 +190,19 @@ if (!$comment = $mform->get_data()) {
     if (!oublog_add_comment($course, $cm, $oublog, $comment)) {
         print_error('couldnotaddcomment', 'oublog');
     }
-    add_to_log($course->id, "oublog", "add comment", $viewurl, $oublog->id, $cm->id);
+
+    // Log add comment event.
+    $params = array(
+            'context' => $context,
+            'objectid' => $comment->id,
+            'other' => array(
+                'oublogid' => $oublog->id,
+                'postid' => $comment->postid,
+        )
+    );
+
+    $event = \mod_oublog\event\comment_created::create($params);
+    $event->trigger();
+
     redirect($viewurl);
 }

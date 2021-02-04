@@ -53,7 +53,7 @@ if (!$oublog->global) {
 $url = new moodle_url('/mod/oublog/editinstance.php', array('instance'=>$bloginstancesid, 'post'=>$postid));
 $PAGE->set_url($url);
 
-$context = get_context_instance(CONTEXT_MODULE, $cm->id);
+$context = context_module::instance($cm->id);
 oublog_check_view_permissions($oublog, $context, $cm);
 $oubloguser = $DB->get_record('user', array('id'=>$oubloginstance->userid));
 $viewurl = 'view.php?user='.$oubloginstance->userid;
@@ -65,7 +65,6 @@ if ($USER->id != $oubloginstance->userid && !has_capability('mod/oublog:managepo
 // Get strings.
 $stroublogs     = get_string('modulenameplural', 'oublog');
 $stroublog      = get_string('modulename', 'oublog');
-$straddpost     = get_string('newpost', 'oublog');
 $streditpost    = get_string('editpost', 'oublog');
 $strblogoptions = get_string('blogoptions', 'oublog');
 
@@ -73,7 +72,8 @@ $strblogoptions = get_string('blogoptions', 'oublog');
 $currentgroup = oublog_get_activity_group($cm, true);
 $groupmode = oublog_get_activity_groupmode($cm, $course);
 
-$mform = new mod_oublog_mod_form('editinstance.php', array('maxvisibility' => $oublog->maxvisibility, 'edit' => !empty($postid)));
+$mform = new mod_oublog_mod_form('editinstance.php', array('maxvisibility' => $oublog->maxvisibility, 'edit' => !empty($postid),
+            'postperpage' => $oublog->postperpage));
 
 if ($mform->is_cancelled()) {
     redirect($viewurl);

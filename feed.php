@@ -34,11 +34,12 @@ $full               = optional_param('full', '', PARAM_TEXT);
 $viewer             = optional_param('viewer', 0, PARAM_INT);
 $groupid            = optional_param('group', 0, PARAM_INT);
 $individualid       = optional_param('individual', 0, PARAM_INT);
+$childblogid        = optional_param('childblog', 0, PARAM_INT);
 
 $url = new moodle_url('/mod/oublog/feed.php', array('format'=>$format, 'blog'=>$blogid,
         'bloginstance'=>$bloginstancesid, 'post'=>$postid));
 $PAGE->set_url($url);
-$PAGE->set_context(get_system_context());
+$PAGE->set_context(context_system::instance());
 // Validate Parameters.
 $format = strtolower($format);
 
@@ -72,9 +73,18 @@ if (isset($bloginstancesid) && $bloginstancesid!='all') {
 if (!isset($blog->id) || !$cm = get_coursemodule_from_instance('oublog', $blog->id)) {
     print_error('invalidcoursemodule');
 }
-
+// Get child blog.
+if (!empty($childblogid)) {
+    $childblog = $DB->get_record('oublog', array('id' => $childblogid), '*', MUST_EXIST);
+    // Get cm of child blog.
+    if (!$cmchildblog = get_coursemodule_from_instance('oublog', $childblog->id)) {
+        print_error('invalidcoursemodule');
+    }
+}
+$feedcm = !empty($cmchildblog) ? $cmchildblog : $cm;
+$feedblog = !empty($childblog) ? $childblog : $blog;
 // Work out link for ordinary web page equivalent to requested feed
-if ($blog->global) {
+if ($feedblog->global) {
     if ($bloginstancesid == 'all') {
         $url = $CFG->wwwroot . '/mod/oublog/allposts.php';
     } else {
@@ -86,16 +96,16 @@ if ($blog->global) {
     $url = $CFG->wwwroot . '/mod/oublog/view.php?id=' . $cm->id .
         ($groupid ? '&group=' . $groupid : '') .
         ($individualid ? '&individual=' . $individualid : '');
-    if (!($course = $DB->get_record('course', array('id'=>$cm->course)))) {
+    if (!($course = $DB->get_record('course', array('id'=>$feedcm->course)))) {
         print_error('coursemisconf');
     }
-    $groupmode = oublog_get_activity_groupmode($cm, $course);
+    $groupmode = oublog_get_activity_groupmode($feedcm, $course);
 }
 
 // Check browser compatibility.
-if (check_browser_version('MSIE', 0) || check_browser_version('Firefox', 0)) {
-    if (!check_browser_version('MSIE', '7') && !check_browser_version('Firefox', '2')) {
-        if ($blog->global) {
+if (core_useragent::check_browser_version('MSIE', 0) || core_useragent::check_browser_version('Firefox', 0)) {
+    if (!core_useragent::check_browser_version('MSIE', '7') && !core_useragent::check_browser_version('Firefox', '2')) {
+        if ($feedblog->global) {
             $url='view.php?user='.$bloginstance->userid;
         } else {
             $url='view.php?id='.$cm->id.($groupid ? '&group='.$groupid : '');
@@ -121,10 +131,10 @@ if ($mtime && isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
     }
 }
 
-if ($blog->global && $bloginstancesid != 'all') {
+if ($feedblog->global && $bloginstancesid != 'all') {
     $accesstoken = $bloginstance->accesstoken;
 } else {
-    $accesstoken = $blog->accesstoken;
+    $accesstoken = $feedblog->accesstoken;
 }
 
 if ($full) {
@@ -139,7 +149,7 @@ if ($full) {
         // This is the old token. Ooops. We know that at least users were
         // logged in, so they get that version...
         $allowedvisibility = OUBLOG_VISIBILITY_LOGGEDINUSER;
-        if (!$blog->global) {
+        if (!$feedblog->global) {
             // For course blogs, security was actually correct, so let's
             // keep allowing them to read the whole blog
             $allowedvisibility = OUBLOG_VISIBILITY_COURSEUSER;
@@ -160,8 +170,8 @@ if ($full) {
 }
 
 // Check individual
-if ($blog->individual) {
-    if (!oublog_individual_has_permissions($cm, $blog, $groupid, $individualid, $user->id)) {
+if ($feedblog->individual) {
+    if (!oublog_individual_has_permissions($feedcm, $feedblog, $groupid, $individualid, $user->id)) {
          print_error('nopermissiontoshow');
     }
 }
@@ -174,23 +184,23 @@ if ($groupmode == SEPARATEGROUPS) {
     } else {
         // Must have access all groups
         require_capability('moodle/site:accessallgroups',
-                get_context_instance(CONTEXT_MODULE, $cm->id), $user->id);
+                context_module::instance($feedcm->id), $user->id);
     }
 }
 
 // Get data for feed in a standard form.
 if ($comments) {
     $feeddata = oublog_get_feed_comments($blogid, $bloginstancesid, $postid, $user,
-            $allowedvisibility, $groupid, $cm);
-    $feedname = strip_tags($blog->name) . ': ' . get_string('commentsfeed', 'oublog');
+            $allowedvisibility, $groupid, $feedcm, $blog, $individualid);
+    $feedname = strip_tags($feedblog->name) . ': ' . get_string('commentsfeed', 'oublog');
     $feedsummary='';
 } else {
     $feeddata = oublog_get_feed_posts($blogid,
         isset($bloginstance) ? $bloginstance : null, $user,
-        $allowedvisibility, $groupid, $cm, $blog, $individualid);
-    $feedname=strip_tags($blog->name);
+        $allowedvisibility, $groupid, $feedcm, $blog, $individualid);
+    $feedname=strip_tags($feedblog->name);
     if ($bloginstancesid=='all') {
-        $feedsummary=strip_tags($blog->intro);
+        $feedsummary=strip_tags($feedblog->intro);
     } else {
         $feedsummary=strip_tags($bloginstance->summary);
     }

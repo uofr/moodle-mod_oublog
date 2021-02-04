@@ -46,7 +46,7 @@ $course = $DB->get_record('course', array('id' => $cm->course), '*', MUST_EXIST)
 $oublog = $DB->get_record('oublog', array('id' => $cm->instance), '*', MUST_EXIST);
 
 $PAGE->set_cm($cm);
-$context = get_context_instance(CONTEXT_MODULE, $cm->id);
+$context = context_module::instance($cm->id);
 $PAGE->set_pagelayout('incourse');
 require_course_login($course, true, $cm);
 
@@ -64,6 +64,9 @@ if ($groupid) {
 
 // set up whether the group selector should display
 $showgroupselector = true;
+$masterblog = null;
+$cmmaster = null;
+$coursemaster = null;
 if ($oublog->individual) {
     // if separate individual and visible group, do not show groupselector
     // unless the current user has permission
@@ -71,22 +74,84 @@ if ($oublog->individual) {
         && !has_capability('mod/oublog:viewindividual', $context)) {
         $showgroupselector = false;
     }
+
+    // Get master blog.
+    if ($oublog->idsharedblog) {
+        $masterblog = oublog_get_master($oublog->idsharedblog);
+
+        // Get cm master.
+        if (!$cmmaster = get_coursemodule_from_instance('oublog', $masterblog->id)) {
+            throw new moodle_exception('invalidcoursemodule');
+        }
+
+        // Get course master.
+        if (!$coursemaster = $DB->get_record('course', array('id' => $masterblog->course))) {
+            throw new moodle_exception('coursemisconf');
+        }
+    }
+}
+// Get CM master.
+$participationcm = !empty($cmmaster) ? $cmmaster : $cm;
+// All enrolled users for table pagination.
+$coursecontext = context_course::instance($course->id);
+// If data has been received from this form.
+$curgroup = -1;
+if ($cm->groupmode > NOGROUPS) {
+    // Get currently viewed group.
+    $curgroup = optional_param('curgroup', oublog_get_activity_group($cm), PARAM_INT);
+}
+// Create time filter options form.
+$default = get_user_preferences('mod_oublog_postformfilter', OUBLOG_STATS_TIMEFILTER_ALL);
+    // Create time filter options form.
+    $customdata = array(
+            'type' => 'participation',
+            'cmid' => $participationcm->id,
+            'user' => $USER->id,
+            'group' => $groupid,
+            'download' => $download,
+            'page' => $page,
+            'startyear' => $course->startdate,
+            'params' => array('curgroup', $curgroup)
+    );
+$timefilter = new oublog_participation_timefilter_form(null, $customdata);
+
+// If data has been received from this form.
+$start = $end = 0;
+$info = 'The info needs to be provided';
+if ($submitted = $timefilter->get_data()) {
+    if ($submitted->start) {
+        $start = strtotime('00:00:00', $submitted->start);
+    }
+    if ($submitted->end) {
+        $end = strtotime('23:59:59', $submitted->end);
+    }
 }
 
-// all enrolled users for table pagination
-$coursecontext = get_context_instance(CONTEXT_COURSE, $course->id);
-$participation = oublog_get_participation($oublog, $context, $groupid, $cm, $course);
-
+$participation = oublog_get_participation($oublog, $context, $groupid, $cm, $course, $start, $end,
+        'u.firstname,u.lastname', $masterblog, $cmmaster, $coursemaster);
 $PAGE->navbar->add(get_string('userparticipation', 'oublog'));
 $PAGE->set_title(format_string($oublog->name));
 $PAGE->set_heading(format_string($oublog->name));
+
+// Log visit list event.
+$params = array(
+    'context' => $context,
+    'objectid' => $oublog->id,
+    'other' => array(
+        'info' => 'user participation',
+        'logurl' => 'participation.php?id=' . $cm->id
+    )
+);
+$event = \mod_oublog\event\participation_viewed::create($params);
+$event->add_record_snapshot('course', $course);
+$event->trigger();
 
 $oublogoutput = $PAGE->get_renderer('mod_oublog');
 
 if (empty($download)) {
     echo $OUTPUT->header();
 
-    // gets a message after grades updated
+    // Gets a message after grades updated.
     if (isset($SESSION->oubloggradesupdated)) {
         $message = $SESSION->oubloggradesupdated;
         unset($SESSION->oubloggradesupdated);
@@ -102,14 +167,39 @@ if (empty($download)) {
     echo '</div>';
 }
 
+if (!$start && !$end) {
+    $title = get_string('participation_all', 'oublog');
+    $info = get_string('participation_all', 'oublog');
+}
+$startdate = userdate($start);
+$enddate = userdate($end);
+if ($start && !$end) {
+    $title = get_string('participation', 'oublog');
+    $info = get_string('participation_from', 'oublog', $startdate);
+}
+if (!$start && $end) {
+    $title = get_string('participation', 'oublog');
+    $info = get_string('participation_to', 'oublog', $enddate);
+}
+if ($start && $end) {
+    $a = new stdClass();
+    $a->start = $startdate;
+    $a->end = $enddate;
+    $title = get_string('participation', 'oublog');
+    $info = get_string('participation_fromto', 'oublog', $a);
+}
+if (empty($download)) {
+    echo html_writer::tag('h2', $info,
+            array('class' => 'oublog-post-title'));
+    $timefilter->display();
+}
+
 $oublogoutput->render_participation_list($cm, $course, $oublog, $groupid,
     $download, $page, $participation, $coursecontext, $viewfullnames,
     $groupname);
 
+echo $oublogoutput->get_link_back_to_oublog($cm->name, $cm->id);
+
 if (empty($download)) {
     echo $OUTPUT->footer();
 }
-
-// Log visit.
-$logurl = "participation.php?id={$id}&group={$groupid}&download={$download}&page={$page}";
-add_to_log($course->id, 'oublog', 'view', $logurl, $oublog->id, $cm->id);

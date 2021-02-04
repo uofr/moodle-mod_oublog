@@ -18,6 +18,10 @@ require_once($CFG->libdir.'/formslib.php');
 
 class mod_oublog_post_form extends moodleform {
 
+    private $restricttags = 0;
+    private $requiretags = 0;
+    private $availtags = array();
+
     public function definition() {
 
         global $CFG;
@@ -28,6 +32,27 @@ class mod_oublog_post_form extends moodleform {
         $edit          = $this->_customdata['edit'];
         $personal      = $this->_customdata['personal'];
         $maxbytes      = $this->_customdata['maxbytes'];
+        $maxattachments = $this->_customdata['maxattachments'];
+        $tagslist = $this->_customdata['tagslist'];
+        $referurl = $this->_customdata['referurl'];
+        $cmid = $this->_customdata['cmid'];
+        $this->restricttags = false;
+        $this->requiretags = false;
+
+        if ($this->_customdata['restricttags'] == 1 || $this->_customdata['restricttags'] == 3) {
+            $this->restricttags = true;
+        }
+        if ($this->_customdata['restricttags'] == 2 || $this->_customdata['restricttags'] == 3) {
+            $this->requiretags = true;
+        }
+        $atags = array();
+        // Get list of tags from 'availtags' customdata.
+        if ($this->_customdata['availtags'] != false && $this->restricttags == true) {
+            $this->availtags = $this->_customdata['availtags'];
+            foreach ($this->availtags as $tag) {
+                $atags[] = $tag->tag;
+            }
+        }
 
         $mform    =& $this->_form;
 
@@ -41,9 +66,19 @@ class mod_oublog_post_form extends moodleform {
                 array('maxfiles' => EDITOR_UNLIMITED_FILES, 'maxbytes' => $maxbytes));
         $mform->addRule('message', get_string('required'), 'required', null, 'client');
 
+        if ($this->restricttags) {
+            $mform->addElement('static', 'restricttagswarning', '', get_string('restricttagslist', 'oublog', implode(',', $atags)));
+        }
+
         $mform->addElement('textarea', 'tags', get_string('tagsfield', 'oublog'), array('cols'=>48, 'rows'=>2));
         $mform->setType('tags', PARAM_TAGLIST);
         $mform->addHelpButton('tags', 'tags', 'oublog');
+        if ($this->_customdata['restricttags'] == 4) {
+            $mform->setDefault('tags', $tagslist);
+        }
+        if ($this->requiretags) {
+            $mform->addRule('tags', get_string('required'), 'required', null, 'client');
+        }
 
         $options = array();
         if ($allowcomments) {
@@ -89,10 +124,11 @@ class mod_oublog_post_form extends moodleform {
             $mform->addElement('hidden', 'visibility', OUBLOG_VISIBILITY_COURSEUSER);
             $mform->setType('visibility', PARAM_INT);
         }
-
-        $mform->addElement('filemanager', 'attachments', get_string('attachments', 'oublog'), null,
-                array('subdirs' => 0, 'maxbytes' => $maxbytes));
-        $mform->addHelpButton('attachments', 'attachments', 'oublog');
+        if ($maxattachments > 0) {
+            $mform->addElement('filemanager', 'attachments', get_string('attachments', 'oublog'), null,
+                    array('subdirs' => 0, 'maxbytes' => $maxbytes, 'maxfiles' => $maxattachments));
+            $mform->addHelpButton('attachments', 'attachments', 'oublog');
+        }
 
         if ($edit) {
             $submitstring = get_string('savechanges');
@@ -109,5 +145,30 @@ class mod_oublog_post_form extends moodleform {
         $mform->addElement('hidden', 'post');
         $mform->setType('post', PARAM_INT);
 
+        $mform->addElement('hidden', 'referurl', $referurl);
+        $mform->setType('referurl', PARAM_LOCALURL);
+
+        $mform->addElement('hidden', 'cmid', $cmid);
+        $mform->setType('cmid', PARAM_INT);
+
+    }
+
+    public function validation($data, $files) {
+        $errors = parent::validation($data, $files);
+        $testtags = 0;
+        $atags = $formtags = array();
+        if ($this->restricttags) {
+            foreach ($this->availtags as $tag) {
+                $atags[] = $tag->tag;
+            }
+            if (!empty($data['tags'])) {
+                $formtags = explode(",", $data['tags']);
+                $testtags = count(array_diff($formtags, $atags));
+            }
+        }
+        if ($this->restricttags && $testtags > 0) {
+            $errors['tags'] = get_string('restricttagsvalidation', 'oublog');
+        }
+        return $errors;
     }
 }

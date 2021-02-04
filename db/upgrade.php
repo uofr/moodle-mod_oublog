@@ -138,5 +138,324 @@ function xmldb_oublog_upgrade($oldversion=0) {
         upgrade_mod_savepoint(true, 2013010801, 'oublog');
     }
 
+    // Add reporting email(s) for OU Alert plugin use.
+    if ($oldversion < 2013101000) {
+        // Define field maxbytes to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('reportingemail', XMLDB_TYPE_CHAR, '255',
+                null, null, null, null, 'grade');
+
+        // Conditionally launch add field maxbytes.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // OUblog savepoint reached.
+        upgrade_mod_savepoint(true, 2013101000, 'oublog');
+    }
+
+    if ($oldversion < 2013102800) {
+
+        // Define field displayname to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('displayname', XMLDB_TYPE_CHAR, '255', null, null, null, null,
+                'reportingemail');
+
+        // Conditionally launch add field displayname.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2013102800, 'oublog');
+    }
+
+    if ($oldversion < 2013102801) {
+
+        // Define field statblockon to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('statblockon', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'displayname');
+
+        // Conditionally launch add field statblockon.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_mod_savepoint(true, 2013102801, 'oublog');
+    }
+
+    if ($oldversion < 2013121100) {
+        // Numerous keys and indexes added.
+        // Define key oublog_posts_groupid_groups_fk (foreign) to be added to oublog_posts.
+        $table = new xmldb_table('oublog_posts');
+        $key = new xmldb_key('oublog_posts_groupid_groups_fk', XMLDB_KEY_FOREIGN, array('groupid'), 'groups', array('id'));
+
+        // Launch add key oublog_posts_groupid_groups_fk.
+        $dbman->add_key($table, $key);
+
+        // Define index allowcomments (not unique) to be added to oublog_posts.
+        $table = new xmldb_table('oublog_posts');
+        $index = new xmldb_index('allowcomments', XMLDB_INDEX_NOTUNIQUE, array('allowcomments'));
+
+        // Conditionally launch add index allowcomments.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Define index visibility (not unique) to be added to oublog_posts.
+        $table = new xmldb_table('oublog_posts');
+        $index = new xmldb_index('visibility', XMLDB_INDEX_NOTUNIQUE, array('visibility'));
+
+        // Conditionally launch add index visibility.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Define index timeposted (not unique) to be added to oublog_comments.
+        $table = new xmldb_table('oublog_comments');
+        $index = new xmldb_index('timeposted', XMLDB_INDEX_NOTUNIQUE, array('timeposted'));
+
+        // Conditionally launch add index timeposted.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2013121100, 'oublog');
+    }
+
+    if ($oldversion < 2014012702) {
+
+        // Define field allowimport to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('allowimport', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'statblockon');
+
+        // Conditionally launch add field allowimport.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2014012702, 'oublog');
+    }
+
+    if ($oldversion < 2014042400) {
+
+        // Define field introonpost to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('introonpost', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'allowimport');
+
+        // Conditionally launch add field introonpost.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2014042400, 'oublog');
+    }
+
+    // Update oublog table, adding tags text field (can be null).
+    if ($oldversion < 2014072501) {
+
+        // Define field tags to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('tags', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'introonpost');
+        // Conditionally launch add field introonpost.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2014072501, 'oublog');
+    }
+
+    if ($oldversion < 2014102300) {
+        // Define field assessed to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('assessed', XMLDB_TYPE_INTEGER, '10',
+                        XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'tags');
+
+        // Conditionally launch add field assessed.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field assesstimestart to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('assesstimestart', XMLDB_TYPE_INTEGER, '10',
+                        XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'assessed');
+
+        // Conditionally launch add field assesstimestart.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field assesstimefinish to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('assesstimefinish', XMLDB_TYPE_INTEGER, '10',
+                        XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'assesstimestart');
+
+        // Conditionally launch add field assesstimefinish.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field scale to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('scale', XMLDB_TYPE_INTEGER, '10',
+                        XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'assesstimefinish');
+
+        // Conditionally launch add field scale.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field grading to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('grading', XMLDB_TYPE_INTEGER, '10',
+                        XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'scale');
+
+        // Conditionally launch add field grading.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        // Set the new grading field to 1 for everything that isn't a default grade.
+        $DB->set_field_select('oublog', 'grading', 1, 'grade != 0');
+
+        // OUblog savepoint reached.
+        upgrade_mod_savepoint(true, 2014102300, 'oublog');
+    }
+
+    if ($oldversion < 2014122400) {
+        // Define field restricttags to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('restricttags', XMLDB_TYPE_INTEGER, '10',
+                        XMLDB_UNSIGNED, XMLDB_NOTNULL, null, '0', 'grading');
+
+        // Conditionally launch add field restricttags.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // OUblog savepoint reached.
+        upgrade_mod_savepoint(true, 2014122400, 'oublog');
+    }
+
+    if ($oldversion < 2015090800) {
+
+        // Define field postfrom to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('postfrom', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'restricttags');
+
+        // Conditionally launch add field postfrom.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field postuntil to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('postuntil', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'postfrom');
+
+        // Conditionally launch add field postuntil.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field commentfrom to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('commentfrom', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'postuntil');
+
+        // Conditionally launch add field commentfrom.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field commentuntil to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('commentuntil', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'commentfrom');
+
+        // Conditionally launch add field commentuntil.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2015090800, 'oublog');
+    }
+
+    if ($oldversion < 2015101501) {
+        global $DB;
+
+        // Fix grade set when grading off.
+        $DB->set_field_select('oublog', 'grade', 0, 'grading = 0 and grade != 0');
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2015101501, 'oublog');
+    }
+
+    if ($oldversion < 2016081600) {
+
+        // Rename field tags on table oublog to tagslist.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('tags', XMLDB_TYPE_CHAR, '255', null, null, null, null, 'introonpost');
+
+        // Launch rename field tags.
+        $dbman->rename_field($table, $field, 'tagslist');
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2016081600, 'oublog');
+    }
+
+    if ($oldversion < 2017061600) {
+
+        // Add timemodified field for applying global search to oublog activity.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+
+        // Conditionally launch add field timemodified.
+        if (!$dbman->field_exists($table, $field)) {
+            // Add the field but allowing nulls.
+            $dbman->add_field($table, $field);
+            // Set the field to 0 for everything.
+            $DB->set_field('oublog', 'timemodified', '0');
+            // Changing nullability of field timemodified to not null.
+            $field = new xmldb_field('timemodified', XMLDB_TYPE_INTEGER, '10', null,
+                XMLDB_NOTNULL, null, null);
+            // Launch change of nullability for field themetype.
+            $dbman->change_field_notnull($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2017061600, 'oublog');
+    }
+
+    if ($oldversion < 2018031300) {
+        // Add postperpage field setting.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('postperpage', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '25', 'timemodified');
+
+        // Conditionally launch add field postperpage.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Oublog savepoint reached.
+        upgrade_mod_savepoint(true, 2018031300, 'oublog');
+    }
+
+    if ($oldversion < 2018032001) {
+        // Define field idsharedblog to be added to oublog.
+        $table = new xmldb_table('oublog');
+        $field = new xmldb_field('idsharedblog', XMLDB_TYPE_CHAR, '100',
+            null, null, null, null, 'postperpage');
+
+        // Conditionally launch add field idsharedblog.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // OUblog savepoint reached.
+        upgrade_mod_savepoint(true, 2018032001, 'oublog');
+    }
+
     return true;
 }

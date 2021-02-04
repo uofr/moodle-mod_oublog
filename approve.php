@@ -73,10 +73,10 @@ if ($email && $key !== $mcomment->secretkey) {
 
 // Require login, it to be your own post, and commenting permission
 require_login($course, $cm);
-$context = get_context_instance(CONTEXT_MODULE, $cm->id);
+$context = context_module::instance($cm->id);
 oublog_check_view_permissions($oublog, $context, $cm);
 if ($USER->id !== $post->userid ||
-        !oublog_can_view_post($post, $USER, $context, $oublog->global) ||
+        !oublog_can_view_post($post, $USER, $context, $cm, $oublog) ||
         !oublog_can_comment($cm, $oublog, $post)) {
     print_error('accessdenied', 'oublog', $backlink);
 }
@@ -88,7 +88,7 @@ if ($post->allowcomments < OUBLOG_COMMENTS_ALLOWPUBLIC ||
 }
 
 // OK they are actually allowed to approve / reject this
-if (!oublog_approve_comment($mcomment, $approve)) {
+if (!$approvedcomment = oublog_approve_comment($mcomment, $approve)) {
     print_error('error_unspecified', 'oublog', 'A5', $backlink);
 }
 
@@ -96,5 +96,20 @@ if (!oublog_approve_comment($mcomment, $approve)) {
 $target = 'viewpost.php?post=' . $post->id;
 if (!$email && $redirectlower) {
     $target .= '#awaiting';
+}
+
+if ($approvedcomment > 0 ) {
+    // Log approved comment event.
+    $params = array(
+            'context' => $context,
+            'objectid' => $approvedcomment,
+            'other' => array(
+                'postid' => $mcomment->postid,
+                'mcommentid' => $mcommentid,
+                'oublogid' => $oublog->id
+            )
+    );
+    $event = \mod_oublog\event\comment_approved::create($params);
+    $event->trigger();
 }
 redirect($target);

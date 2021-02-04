@@ -26,8 +26,19 @@
 defined('MOODLE_INTERNAL') || die();
 
 $logs = array(
+    array('module'=>'oublog', 'action'=> 'add', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'update', 'mtable'=>'oublog', 'field'=>'name'),
     array('module'=>'oublog', 'action'=>'view', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'view all', 'mtable'=>'oublog', 'field'=>'name'),
     array('module'=>'oublog', 'action'=>'add post', 'mtable'=>'oublog', 'field'=>'name'),
     array('module'=>'oublog', 'action'=>'edit post', 'mtable'=>'oublog', 'field'=>'name'),
     array('module'=>'oublog', 'action'=>'add comment', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'extdashadd', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'extdashremove', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'allposts', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'approve comment', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'delete comment', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'delete post', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'view post', 'mtable'=>'oublog', 'field'=>'name'),
+    array('module'=>'oublog', 'action'=> 'import post', 'mtable'=>'oublog', 'field'=>'name'),
 );

@@ -121,7 +121,7 @@ class oublog_participation_table extends flexible_table {
      * Overriding here to avoid downloading in unsupported formats
      */
     public function get_download_menu() {
-        $exportclasses = array('csv' => get_string('downloadcsv', 'table'));
+        $exportclasses = array('csv' => get_string('downloadcsv', 'oublog'));
         return $exportclasses;
     }
 
@@ -221,7 +221,7 @@ class oublog_user_participation_table extends flexible_table {
     }
 
     public function setup($download = '') {
-        global $CFG;
+        global $CFG, $PAGE;
 
         // Extra headers
         $this->postsheader = array(
@@ -263,8 +263,7 @@ class oublog_user_participation_table extends flexible_table {
 
         $this->define_columns($columns);
         $this->define_headers($headers);
-        $this->define_baseurl($CFG->wwwroot . '/mod/oublog/userparticipation.php?id=' .
-            $this->cmid . '&amp;user=' . $this->userid . '&amp;group=' . $this->groupid);
+        $this->define_baseurl($PAGE->url);
 
         $this->set_attribute('cellspacing', '0');
         $this->set_attribute('id', 'participation');
@@ -282,7 +281,7 @@ class oublog_user_participation_table extends flexible_table {
      * Overriding here to avoid downloading in unsupported formats
      */
     public function get_download_menu() {
-        $exportclasses = array('csv' => get_string('downloadcsv', 'table'));
+        $exportclasses = array('csv' => get_string('downloadcsv', 'oublog'));
         return $exportclasses;
     }
 
@@ -297,9 +296,9 @@ class oublog_user_participation_table extends flexible_table {
             $downloadoptions = $this->get_download_menu();
             $html = '<form action="'. $this->baseurl .'" method="post">';
             $html .= '<div class="mdl-align">';
-            $html .= '<input type="submit" value="'.get_string('downloadas', 'oublog').'"/>';
+            $html .= '<input type="submit" value="'.get_string('downloadas', 'oublog').'"/> ';
             $html .= html_writer::select($downloadoptions, 'download',
-                $this->defaultdownloadformat, false);
+                $this->download, false);
             $html .= '</div></form>';
         }
         return $html;
