@@ -614,7 +614,7 @@ function oublog_supports($feature) {
  * @param bool $type Type of comparison (or/and; can be used as return value if no conditions)
  * @return bool True if completed, false if not, $type if conditions not set.
  */
-function oublog_get_completion_state_lib($cm, $userid, $type) {
+function oublog_get_completion_state($course, $cm, $userid, $type) {
     global $DB;
 
     // Get oublog details
