@@ -232,6 +232,8 @@ $string['completionposts'] = 'User must make blog posts:';
 $string['completioncommentsgroup'] = 'Require comments';
 $string['completioncommentsgroup_help'] = 'If you enable this option, the blog will be marked as complete for a student once they have left the specified number of comments.';
 $string['completioncomments'] = 'User must make comments on blog posts:';
+$string['completiondetail:posts'] = 'Make {$a->name} posts: {$a->number}';
+$string['completiondetail:comments'] = 'Make comments: {$a}';
 
 $string['computingguide'] = 'Guide to blogs';
 $string['computingguideurl'] = 'Computing guide URL';
@@ -590,8 +592,10 @@ $string['viewallparticipation'] = 'View all participation';
 $string['timestartenderror'] = 'Selection end date cannot be earlier than the start date';
 
 $string['savefailtitle'] = 'Post cannot be saved';
-$string['savefailnetwork'] = '<p>Unfortunately, your changes cannot be saved at this time.
-This is due to a network error; the website is temporarily unavailable or you have been signed out. </p>
+$string['savefailnetwork'] = 'a network error; the website is temporarily unavailable or cannot be reached';
+$string['savefailsession'] = 'a session error; your session has expired due to inactivity or you are no longer logged in';
+$string['savefailtext'] = '<p>Unfortunately, your changes cannot be saved at this time.
+This is due to {$a}. </p>
 <p>Saving has been disabled on this blog.
 In order to retain any changes you must copy the edited blog content,
 access the Edit page again and then paste in your changes.</p>';

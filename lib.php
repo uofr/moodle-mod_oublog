@@ -39,6 +39,7 @@
  */
 function oublog_add_instance($oublog) {
     global $DB;
+    $cmid = $oublog->coursemodule;
     // Generate an accesstoken.
     $oublog->accesstoken = md5(uniqid(rand(), true));
     $oublog->timemodified = time();
@@ -62,6 +63,10 @@ function oublog_add_instance($oublog) {
     }
     oublog_grade_item_update($oublog);
 
+    // Update completion event in calendar.
+    $completionexpected = (!empty($oublog->completionexpected)) ? $oublog->completionexpected : null;
+    \core_completion\api::update_completion_date_event($cmid, 'oublog', $oublog->id, $completionexpected);
+
     return($oublog->id);
 }
 
@@ -77,6 +82,7 @@ function oublog_add_instance($oublog) {
  */
 function oublog_update_instance($oublog) {
     global $DB;
+    $cmid = $oublog->coursemodule;
     $oublog->id = $oublog->instance;
     $oublog->timemodified = time();
     if (!$DB->get_record('oublog', array('id' => $oublog->id))) {
@@ -103,6 +109,10 @@ function oublog_update_instance($oublog) {
 
     oublog_grade_item_update($oublog);
 
+    // Update completion event in calendar.
+    $completionexpected = (!empty($oublog->completionexpected)) ? $oublog->completionexpected : null;
+    \core_completion\api::update_completion_date_event($cmid, 'oublog', $oublog->id, $completionexpected);
+
     return(true);
 }
 
@@ -113,7 +123,7 @@ function oublog_update_instance($oublog) {
  * permanently delete the instance and any data that depends on it.
  *
  * @param int $id The ID of the module instance
- * @return boolena true on success, false on failure.
+ * @return boolean true on success, false on failure.
  */
 function oublog_delete_instance($oublogid) {
     global $DB, $CFG;
@@ -122,7 +132,7 @@ function oublog_delete_instance($oublogid) {
     }
 
     if ($oublog->global) {
-        print_error('deleteglobalblog', 'oublog');
+        throw new moodle_exception('deleteglobalblog', 'oublog');
     }
 
     if ($instances = $DB->get_records('oublog_instances', array('oublogid'=>$oublog->id))) {
@@ -154,18 +164,20 @@ function oublog_delete_instance($oublogid) {
     // instances
     $DB->delete_records('oublog_instances', array('oublogid'=>$oublog->id));
 
+    if (!$cm = get_coursemodule_from_instance('oublog', $oublog->id)) {
+        throw new moodle_exception('invalidcoursemodule');
+    }
+
     // Fulltext search data
     require_once(dirname(__FILE__).'/locallib.php');
     if (oublog_search_installed()) {
-        $moduleid=$DB->get_field('modules', 'id', array('name'=>'oublog'));
-        $cm=$DB->get_record('course_modules', array('module'=>$moduleid, 'instance'=>$oublog->id));
-        if (!$cm) {
-            print_error('invalidcoursemodule');
-        }
         local_ousearch_document::delete_module_instance_data($cm);
     }
 
     oublog_grade_item_delete($oublog);
+
+    // Delete event in calendar when deleting activity.
+    \core_completion\api::update_completion_date_event($cm->id, 'oublog', $oublogid, null);
 
     // oublog
     return($DB->delete_records('oublog', array('id'=>$oublog->id)));
@@ -616,7 +628,7 @@ function oublog_supports($feature) {
  * @param bool $type Type of comparison (or/and; can be used as return value if no conditions)
  * @return bool True if completed, false if not, $type if conditions not set.
  */
-function oublog_get_completion_state($course, $cm, $userid, $type) {
+function oublog_get_completion_state_lib($cm, $userid, $type) {
     global $DB;
 
     // Get oublog details
@@ -1550,4 +1562,38 @@ function oublog_get_coursemodule_info($coursemodule) {
     }
 
     return $info;
+}
+
+/**
+ * This function receives a calendar event and returns the action associated with it, or null if there is none.
+ *
+ * This is used by block_myoverview in order to display the event appropriately. If null is returned then the event
+ * is not displayed on the block.
+ *
+ * @param calendar_event $event
+ * @param \core_calendar\action_factory $factory
+ * @param int $userid User id to use for all capability checks, etc. Set to 0 for current user (default).
+ * @return \core_calendar\local\event\entities\action_interface|null
+ */
+function mod_oublog_core_calendar_provide_event_action(calendar_event $event, \core_calendar\action_factory $factory, int $userid = 0) {
+    global $USER;
+    if (!$userid) {
+        $userid = $USER->id;
+    }
+    $cm = get_fast_modinfo($event->courseid, $userid)->instances['oublog'][$event->instance];
+    if (!$cm->uservisible) {
+        // The module is not visible to the user for any reason.
+        return null;
+    }
+    $completion = new \completion_info($cm->get_course());
+    $completiondata = $completion->get_data($cm, false, $userid);
+    if ($completiondata->completionstate != COMPLETION_INCOMPLETE) {
+        return null;
+    }
+    return $factory->create_instance(
+        get_string('view'),
+        new \moodle_url('/mod/oublog/view.php', ['id' => $cm->id]),
+        1,
+        true
+    );
 }

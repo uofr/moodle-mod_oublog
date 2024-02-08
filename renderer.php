@@ -590,6 +590,8 @@ class mod_oublog_renderer extends plugin_renderer_base {
                 $endposition = count($participation);
                 $offset = 0;
             }
+
+            $extrafields = \core_user\fields::get_identity_fields($context);
             $currentposition = 0;
             foreach ($participation as $user) {
                 if ($currentposition == $offset && $offset < $endposition) {
@@ -662,6 +664,13 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     } else {
                         $row = array($fullname, $posts, $comments);
                     }
+
+                    // Add identity fields data for user.
+                    $col = count($row);
+                    foreach ($extrafields as $field) {
+                        $row[$col++] = isset($user->$field) ? $user->$field : '';
+                    }
+
                     if (isset($gradeitem)) {
                         $row[] = $gradeitem;
                     }
@@ -1033,13 +1042,13 @@ class mod_oublog_renderer extends plugin_renderer_base {
                 $deluser = new stdClass();
                 $fields = \core_user\fields::get_name_fields();
                 foreach ($fields as $field) {
-                    $field = 'del' . $field;
-                    $deluser->$field = $comment->$field;
+                    $dfield = 'del' . $field;
+                    $deluser->$field = $comment->$dfield;
                 }
 
                 $a = new stdClass();
-                $a->fullname = '<a href="../../user/view.php?id=' . $comment->deletedby . '">' .
-                        fullname($deluser) . '</a>';
+                $a->fullname = html_writer::tag('a', fullname($deluser),
+                        array('href' => $CFG->wwwroot . '/user/view.php?id=' . $comment->deletedby));
                 $a->timedeleted = oublog_date($comment->timedeleted);
 
                 $output .= html_writer::tag('div', get_string('deletedby', 'oublog', $a),
