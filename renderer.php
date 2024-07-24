@@ -556,10 +556,12 @@ class mod_oublog_renderer extends plugin_renderer_base {
      * @param array $participation mixed array of user participation values
      * @param object $context current context
      * @param bool $viewfullnames flag for global users fullnames capability
-     * @param string groupname group name for display, default ''
+     * @param string $groupname group name for display, default ''
+     * @param int $start participation from
+     * @param int $end participation to
      */
     public function render_participation_list($cm, $course, $oublog, $groupid,
-        $download, $page, $participation, $context, $viewfullnames, $groupname) {
+        $download, $page, $participation, $context, $viewfullnames, $groupname, $start = 0, $end = 0) {
         global $DB, $CFG, $OUTPUT;
 
         require_once($CFG->dirroot.'/mod/oublog/participation_table.php');
@@ -574,7 +576,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
         $hasgrades = !empty($participation) && isset(reset($participation)->gradeobj);
         $table = new oublog_participation_table($cm, $course, $oublog,
             $groupid, $groupname, $hasgrades);
-        $table->setup($download);
+        $table->setup($download, $start, $end);
         $table->is_downloading($download, $filename, get_string('participation', 'oublog'));
 
         if (!empty($participation)) {
@@ -1438,21 +1440,20 @@ class mod_oublog_renderer extends plugin_renderer_base {
         $out .= html_writer::end_tag('ul');
 
         $default = get_user_preferences("oublog_accordion_{$name}_open", $default);
-        user_preference_allow_ajax_update("oublog_accordion_{$name}_open", PARAM_INT);
         $this->include_accordion_js($name, $default);
 
         return $out;
     }
 
     /**
-     * Include the js file
-     * @param string $name
-     * @param int $default Default tab to open
+     * Include the accordion js file.
+     *
+     * @param string $name Name of the accordion.
+     * @param int $default Default tab to open.
+     * @return void
      */
-    public function include_accordion_js($name, $default = 1) {
-        global $PAGE;
-        $PAGE->requires->yui_module('moodle-mod_oublog-accordion', 'M.mod_oublog.accordion.init',
-                array($name, $default));
+    public function include_accordion_js(string $name, int $default = 1): void {
+        $this->page->requires->js_call_amd('mod_oublog/accordion', 'init', [$name, $default]);
     }
 
     public function render_stats_view($name, $maintitle, $content, $subtitle = '', $info = '', $form = null, $ajax = false) {
@@ -1486,7 +1487,6 @@ class mod_oublog_renderer extends plugin_renderer_base {
                 $plushide = '';
             }
             // Setup Javascript for stats view.
-            user_preference_allow_ajax_update("mod_oublog_hidestatsform_$name", PARAM_BOOL);
             $PAGE->requires->js('/mod/oublog/module.js');
             $module = array ('name' => 'mod_oublog');
             $module['fullpath'] = '/mod/oublog/module.js';
@@ -1687,7 +1687,7 @@ EOF;
             $idstring = 'user';
         }
         $url = new moodle_url('/mod/oublog/view.php', array($idstring => $id));
-        return html_writer::tag('div', link_arrow_left($label, $url), array('id' => 'oublog-arrowback'));
+        return html_writer::tag('div', link_arrow_left(html_writer::span(get_string('returntolabel', 'oublog'), 'sr-only') . $label, $url), array('id' => 'oublog-arrowback'));
     }
 
     /**
