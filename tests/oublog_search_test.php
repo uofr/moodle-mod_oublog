@@ -419,6 +419,7 @@ class oublog_search_test extends oublog_test_lib {
 
         $titlecheck = 'test_oublog_get_posts';
         $messagecheck = 'test_oublog_mesage';
+        $time = time();
 
         $post1stub = $this->get_post_stub($oublog1->id);
         $post1stub->title = $titlecheck . '_1';
@@ -426,6 +427,7 @@ class oublog_search_test extends oublog_test_lib {
         $post1stub->userid = $suser1->id;
         $post1stub->tags = 'blogtag1';
         $post1stub->groupid = $group1->id;
+        $post1stub->timeposted = $time;
         $post1id = oublog_add_post($post1stub, $cm1, $oublog1, $course);
 
         // Create an OUBlog without groups.
@@ -437,6 +439,7 @@ class oublog_search_test extends oublog_test_lib {
         $post2stub->title = 'No groups';
         $post2stub->userid = $suser1->id;
         $post2stub->tags = 'blogtag1';
+        $post2stub->timeposted = $time + 1; // Ensure this is after the first post.
         $post2id = oublog_add_post($post2stub, $cm2, $oublog2, $course);
 
         // OU Blog with Individual blogs and No groups.
@@ -447,6 +450,7 @@ class oublog_search_test extends oublog_test_lib {
         $post3stub->title = 'Individual blogs';
         $post3stub->userid = $suser1->id;
         $post3stub->groupid = 0;
+        $post3stub->timeposted = $time + 2; // Ensure this is after the second post.
         $post3id = oublog_add_post($post3stub, $cm3, $oublog3, $course);
 
         // Get a list of the posts.
