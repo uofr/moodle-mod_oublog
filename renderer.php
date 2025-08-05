@@ -317,27 +317,29 @@ class mod_oublog_renderer extends plugin_renderer_base {
         }
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-links'));
         if (!$forexport && !$email) {
-            $output .= html_writer::tag('a', $strpermalink, array('href' => $CFG->wwwroot .
-                    '/mod/oublog/viewpost.php?post=' . $post->id . $cmparam)).' ';
+            $output .= html_writer::tag('a', $strpermalink, ['class' => 'osep-smallbutton',
+                    'href' => $CFG->wwwroot . '/mod/oublog/viewpost.php?post=' . $post->id . $cmparam]) . ' ';
         }
 
         if (!$post->deletedby) {
             if (($post->userid == $USER->id || $canmanageposts)) {
                 if (!$forexport && !$email) {
-                    $output .= html_writer::tag('a', $stredit, array('href' => $CFG->wwwroot .
+                    $output .= html_writer::tag('a', $stredit, ['class' => 'osep-smallbutton',
+                            'href' => $CFG->wwwroot .
                             '/mod/oublog/editpost.php?blog=' . $post->oublogid .
-                            '&post=' . $post->id . '&referurl=' . urlencode($referurl) . $cmparam)) . ' ';
+                            '&post=' . $post->id . '&referurl=' . urlencode($referurl) . $cmparam]) . ' ';
                     if (($post->userid !== $USER->id)) {
                         // Add email and 'oublog_deleteandemail' to delete link.
-                        $output .= html_writer::tag('a', $strdelete, array('href' => $CFG->wwwroot .
+                        $output .= html_writer::tag('a', $strdelete, ['href' => $CFG->wwwroot .
                                 '/mod/oublog/deletepost.php?blog=' . $post->oublogid .
                                 '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl) . $cmparam,
-                                'class' => 'oublog_deleteandemail_' . $post->id));
+                                'class' => 'oublog_deleteandemail_' . $post->id . ' osep-smallbutton']);
                         self::render_oublog_print_delete_dialog($cm->id, $post->id);
                     } else {
-                        $output .= html_writer::tag('a', $strdelete, array('href' => $CFG->wwwroot .
+                        $output .= html_writer::tag('a', $strdelete, ['class' => 'osep-smallbutton',
+                                'href' => $CFG->wwwroot .
                                 '/mod/oublog/deletepost.php?blog=' . $post->oublogid .
-                                '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl) . $cmparam));
+                                '&post=' . $post->id . '&delete=1' . '&referurl=' . urlencode($referurl) . $cmparam]);
                     }
                     $output .= ' ';
                 }
@@ -370,7 +372,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                         'post', $post->id, $itemnurl, $itemnurl, '', false, true);
                 if ($reportlink != '' && !$forexport && !$email) {
                     $output .= html_writer::tag('a', get_string('postalert', 'oublog'),
-                            array('href' => $reportlink));
+                            ['href' => $reportlink, 'class' => 'osep-smallbutton']);
                 }
             }
 
@@ -400,8 +402,9 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     }
                     if (!$forexport) {
                         // Display link.
-                        $output .= html_writer::tag('a', $linktext, array('href' => $CFG->wwwroot .
-                                '/mod/oublog/viewpost.php?post=' . $post->id . $referurlparam . $cmparam . '#oublogcomments'));
+                        $output .= html_writer::tag('a', $linktext, ['href' => $CFG->wwwroot .
+                                '/mod/oublog/viewpost.php?post=' . $post->id . $referurlparam . $cmparam . '#oublogcomments',
+                                'class' => 'osep-smallbutton']);
                     } else {
                         $output .= $linktext;
                     }
@@ -428,7 +431,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                         } else if($cmid) {
                             $href .= '&referurl=' . urlencode($referurl);
                         }
-                        $output .= html_writer::tag('a', $strcomment, array('href' => $href));
+                        $output .= html_writer::tag('a', $strcomment, ['href' => $href, 'class' => 'osep-smallbutton']);
                     }
                 }
             }
@@ -1138,7 +1141,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                         ($oublog->global && $post->userid == $USER->id) ||
                         $canmanagecomments ) {
                     if (!$forexport) {
-                        $output .= '<a href="deletecomment.php?comment=' .
+                        $output .= '<a class="osep-smallbutton" href="deletecomment.php?comment=' .
                                 $comment->id . $cmparam . $referurlparam  . '">' . $strdelete.'</a>';
                     }
                 }
@@ -1157,7 +1160,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                         'comment', $comment->id, $itemurl, $returnurl, '', false, true);
                 if ($reportlink != '') {
                     $output .= html_writer::tag('a', get_string('commentalert', 'oublog'),
-                            array('href' => $reportlink));
+                            ['href' => $reportlink, 'class' => 'osep-smallbutton']);
                 }
             }
 
@@ -1495,9 +1498,6 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     array('class' => 'oublog_stats_plus' . $plushide));
             $out .= html_writer::end_tag('a');
 
-            // Stats bar - call once per 'view'.
-            $PAGE->requires->yui_module('moodle-mod_oublog-statsbar', 'M.mod_oublog.statsbar.init',
-                    array("oublog_statsview_content_$name"));
             $out .= html_writer::tag('p', $info, array('class' => "oublog_{$name}_info"));
         }
         if (!empty($form)) {
@@ -1530,7 +1530,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
         $infodiv = html_writer::start_div('oublog_statsinfo_infocol');
         if ($info->stat) {
             $infodiv .= html_writer::start_div('oublog_statsinfo_bar');
-            $infodiv .= html_writer::tag('span', $info->stat, array('class' => 'percent_' . $info->percent));
+            $infodiv .= html_writer::tag('span', $info->stat);
             $infodiv .= html_writer::end_div();
         }
         $infodiv .= html_writer::div($info->label, 'oublog_statsinfo_label');
