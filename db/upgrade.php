@@ -457,5 +457,31 @@ function xmldb_oublog_upgrade($oldversion=0) {
         upgrade_mod_savepoint(true, 2018032001, 'oublog');
     }
 
+    if ($oldversion < 2025070900) {
+
+        // Define field messageformat to be added to oublog_posts.
+        $table = new xmldb_table('oublog_posts');
+        $field = new xmldb_field('messageformat', XMLDB_TYPE_INTEGER, '4', null,
+                XMLDB_NOTNULL, null, '1', 'lasteditedby');
+
+        // Conditionally launch add field messageformat to oublog_posts.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Define field messageformat to be added to oublog_comments.
+        $table = new xmldb_table('oublog_comments');
+        $field = new xmldb_field('messageformat', XMLDB_TYPE_INTEGER, '4', null,
+                XMLDB_NOTNULL, null, '1', 'timeapproved');
+
+        // Conditionally launch add field messageformat to oublog_comments.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // OUblog savepoint reached.
+        upgrade_mod_savepoint(true, 2025070900, 'oublog');
+    }
+
     return true;
 }

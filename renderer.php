@@ -284,7 +284,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
             $posttextoptions->trusted = true;
             $posttextoptions->context = $modcontext;
         }
-        $output .= format_text($post->message, FORMAT_HTML, $posttextoptions);
+        $output .= format_text($post->message, $post->messageformat, $posttextoptions);
         $output .= html_writer::end_tag('div');
         $output .= html_writer::start_tag('div', array('class' => 'oublog-post-bottom'));
 
@@ -896,7 +896,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     if ($cmmaster) {
                         $post->message = oublog_add_cmid_to_tag_atrribute($cm->id, $post->message, 'img', 'src');
                     }
-                    $row[] = format_text($post->message, FORMAT_HTML);
+                    $row[] = format_text($post->message, $post->messageformat);
                     $fs = get_file_storage();
                     if ($files = $fs->get_area_files($filecontext->id, 'mod_oublog', 'attachment',
                             $post->id, 'timemodified', false)) {
@@ -937,7 +937,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     if ($cmmaster) {
                         $comment->message = oublog_add_cmid_to_tag_atrribute($cm->id, $comment->message, 'img', 'src');
                     }
-                    $row[] = format_text($comment->message, FORMAT_HTML);
+                    $row[] = format_text($comment->message, $comment->messageformat);
                     $row[] = $authorfullname;
                     $row[] = userdate($comment->postdate, get_string('strftimedate'));
                     $row[] = userdate($comment->postdate, get_string('strftimetime'));
@@ -1130,7 +1130,7 @@ class mod_oublog_renderer extends plugin_renderer_base {
                     $comment->message = oublog_add_cmid_to_tag_atrribute($cm->id, $comment->message, 'img', 'src');
                 }
             }
-            $output .= format_text($comment->message, FORMAT_HTML);
+            $output .= format_text($comment->message, $comment->messageformat);
             $output .= html_writer::end_tag('div');
             $output .= html_writer::start_tag('div',
                     array('class' => 'oublog-post-links'));

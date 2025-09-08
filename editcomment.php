@@ -155,6 +155,9 @@ if (!$comment = $mform->get_data()) {
     unset($comment->id);
     $comment->userid = $USER->id;
     $comment->postid = $postid;
+    if (is_array($comment->messagecomment)) {
+        $comment->messageformat = $comment->messagecomment['format'];
+    }
 
     // Special behaviour for moderated users
     if ($moderated) {

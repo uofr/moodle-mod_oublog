@@ -681,6 +681,7 @@ $string['privacy:metadata:oublog_comments'] = 'Comments on an OU blog post.';
 $string['privacy:metadata:oublog_comments:title'] = 'The title of the comment.';
 $string['privacy:metadata:oublog_comments:userid'] = 'The user ID of the comment originator.';
 $string['privacy:metadata:oublog_comments:message'] = 'The comment detail.';
+$string['privacy:metadata:oublog_comments:messageformat'] = 'Format of text in the comment \'message\' field, e.g. FORMAT_HTML.';
 $string['privacy:metadata:oublog_comments:authorname'] = 'For moderated comments: author name (required).';
 $string['privacy:metadata:oublog_comments:authorip'] = 'For moderated comments: author IP address (required).';
 
@@ -691,6 +692,7 @@ $string['privacy:metadata:oublog_instances:summary'] = 'Summary of the OU blog i
 
 $string['privacy:metadata:oublog_posts'] = 'Posts in an OU blog.';
 $string['privacy:metadata:oublog_posts:message'] = 'The text of the OU blog post.';
+$string['privacy:metadata:oublog_posts:messageformat'] = 'Format of text in the \'message\' field, e.g. FORMAT_HTML.';
 $string['privacy:metadata:oublog_posts:title'] = 'The title of the OU blog post.';
 $string['privacy:metadata:oublog_posts:deletedby'] = 'The user who deleted this blog post (if it was deleted).';
 $string['privacy:metadata:oublog_posts:lasteditedby'] = 'The user to last edit the OU blog post (if it was edited).';

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="mod/oublog/db" VERSION="20160816" COMMENT="XMLDB file for Moodle mod/oublog"
+<XMLDB PATH="mod/oublog/db" VERSION="20250708" COMMENT="XMLDB file for Moodle mod/oublog"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -82,6 +82,7 @@
         <FIELD NAME="timedeleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
         <FIELD NAME="visibility" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="100" SEQUENCE="false"/>
         <FIELD NAME="lasteditedby" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="User ID of user to last edit post, or null if not edited"/>
+        <FIELD NAME="messageformat" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="1" SEQUENCE="false" COMMENT="Identifier for Moodle format (e.g. HTML) used for message content."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
@@ -109,6 +110,7 @@
         <FIELD NAME="authorname" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="For moderated comments: author name (required). For non-moderated comments, must be null."/>
         <FIELD NAME="authorip" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="For moderated comments: author IP address (required). For non-moderated comments, must be null."/>
         <FIELD NAME="timeapproved" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="For moderated comments: time at which comment was approved. For non-moderated comments, must be null."/>
+        <FIELD NAME="messageformat" TYPE="int" LENGTH="1" NOTNULL="false" DEFAULT="1" SEQUENCE="false" COMMENT="Identifier for Moodle format (e.g. HTML) used for message content."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
