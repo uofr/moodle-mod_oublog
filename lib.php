@@ -270,7 +270,8 @@ function oublog_print_recent_activity($course, $isteacher, $timestart) {
 
     include_once('locallib.php');
 
-    $sql = "SELECT i.oublogid, p.id AS postid, p.*, u.firstname, u.lastname, u.email, u.idnumber, i.userid
+    $sql = "SELECT i.oublogid, p.id AS postid, p.*, u.firstname, u.lastname, u.email, u.idnumber,
+       u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, i.userid
             FROM {oublog_posts} p
                 INNER JOIN {oublog_instances} i ON p.oubloginstancesid = i.id
                 INNER JOIN {oublog} b ON i.oublogid = b.id
@@ -354,7 +355,8 @@ function oublog_print_recent_activity($course, $isteacher, $timestart) {
 function oublog_get_recent_mod_activity(&$activities, &$index, $timestart, $courseid, $cmid, $userid=0, $groupid=0) {
     global $CFG, $COURSE, $DB;
 
-    $sql = "SELECT i.oublogid, p.id AS postid, p.*, u.firstname, u.lastname, u.email, u.idnumber, u.picture, u.imagealt, i.userid
+    $sql = "SELECT i.oublogid, p.id AS postid, p.*, u.firstname, u.lastname, u.email, u.idnumber, u.picture, u.imagealt,
+       u.firstnamephonetic, u.lastnamephonetic, u.middlename, u.alternatename, i.userid
             FROM {oublog_posts} p
                 INNER JOIN {oublog_instances} i ON p.oubloginstancesid = i.id
                 INNER JOIN {oublog} b ON i.oublogid = b.id
@@ -383,6 +385,7 @@ function oublog_get_recent_mod_activity(&$activities, &$index, $timestart, $cour
             continue;
         }
 
+        require_once(dirname(__FILE__).'/locallib.php');
         $groupmode = oublog_get_activity_groupmode($cm, $COURSE);
 
         if ($groupmode) {
@@ -422,6 +425,10 @@ function oublog_get_recent_mod_activity(&$activities, &$index, $timestart, $cour
         $tmpactivity->user->picture   = $blog->picture;
         $tmpactivity->user->imagealt  = $blog->imagealt;
         $tmpactivity->user->email     = $blog->email;
+        $tmpactivity->user->firstnamephonetic  = $blog->firstnamephonetic;
+        $tmpactivity->user->lastnamephonetic  = $blog->lastnamephonetic;
+        $tmpactivity->user->middlename  = $blog->middlename;
+        $tmpactivity->user->alternatename  = $blog->alternatename;
 
         $activities[$index++] = $tmpactivity;
     }

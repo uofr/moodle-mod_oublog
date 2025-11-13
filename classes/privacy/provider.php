@@ -83,6 +83,7 @@ class provider implements
                     'message' => 'privacy:metadata:oublog_comments:message',
                     'authorname' => 'privacy:metadata:oublog_comments:authorname',
                     'authorip' => 'privacy:metadata:oublog_comments:authorip',
+                    'messageformat' => 'privacy:metadata:oublog_comments:messageformat',
                 ], 'privacy:metadata:oublog_comments');
 
         // The 'oublog_posts' table stores information about blog posts.
@@ -92,6 +93,7 @@ class provider implements
                     'title' => 'privacy:metadata:oublog_posts:title',
                     'lasteditedby' => 'privacy:metadata:oublog_posts:lasteditedby',
                     'deletedby' => 'privacy:metadata:oublog_posts:deletedby',
+                    'messageformat' => 'privacy:metadata:oublog_posts:messageformat',
                 ], 'privacy:metadata:oublog_posts');
 
         // The 'oublog_edits' table stores information about superceded posts.

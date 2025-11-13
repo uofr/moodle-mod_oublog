@@ -228,7 +228,7 @@ if (!$frmpost = $mform->get_data()) {
         $post->id = $post->post;
         $post->oublogid = $oublog->id;
         $post->userid = $oubloginstance->userid;
-
+        $post->messageformat = $post->message['format'];
         oublog_edit_post($post, $cm);
 
         // Log post edited event.
@@ -250,7 +250,7 @@ if (!$frmpost = $mform->get_data()) {
         unset($post->id);
         $post->oublogid = $oublog->id;
         $post->userid = $USER->id;
-
+        $post->messageformat = $post->message['format'];
         // Consider groups only when it is not an individual blog.
         if ($correctinvidualsetting) {
             $post->groupid = 0;

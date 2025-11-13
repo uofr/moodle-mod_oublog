@@ -1098,3 +1098,32 @@ Feature: Test Post and Comment on OUBlog entry
     And I press "New blog post"
     And I switch to the "Message" TinyMCE editor iframe
     And I should not see "Teacher1 post 3"
+
+  @javascript
+  Scenario: Check text format using plain text area when creating a blog post and comment.
+    Given I log in as "admin"
+    And I follow "Preferences" in the user menu
+    And I follow "Editor preferences"
+    And I set the field "Text editor" to "Plain text area"
+    And I press "Save changes"
+    And I am on "Course 1" course homepage
+    And I am on the "Test oublog basics" "oublog activity" page
+    # Check post.
+    And I press "New blog post"
+    And I set the following fields to these values:
+      | Title             | Test text format post |
+      | Message           | This is content       |
+      | menumessageformat | 4                     |
+    When I press "Add post"
+    And I should see "This is content" in the ".oublog-post-content p" "css_element"
+    And I follow "Edit"
+    Then "//select[contains(@id,'menumessageformat')]/option[contains(@value, '4') and contains(@selected, '')]" "xpath_element" should exist
+    And I press "Cancel"
+    # Check comment.
+    And I follow "Add your comment"
+    And I set the following fields to these values:
+      | Title                    | Test text format comment |
+      | Add your comment         | This is comment          |
+      | menumessagecommentformat | 4                        |
+    And I press "Add comment"
+    And I should see "This is comment" in the ".oublog-comment-content p" "css_element"
