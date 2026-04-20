@@ -41,7 +41,7 @@ class mod_oublog_generator extends testing_module_generator {
         parent::reset();
     }
 
-    public function create_instance($record = null, array $options = null) {
+    public function create_instance($record = null, ?array $options = null) {
         global $CFG, $SITE;
         require_once($CFG->dirroot . '/mod/oublog/locallib.php');
 
