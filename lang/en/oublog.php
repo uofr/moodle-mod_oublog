@@ -15,11 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 $string['attachments'] = "Attachments";
-$string['oublog'] = 'OU blog';
-$string['modulename'] = 'OU blog';
-$string['modulenameplural'] = 'OU blogs';
-$string['modulename_help'] = 'This allows for the creation of blogs within a module (which are separate
-to the core Moodle blog system). You can have module-wide blogs (everyone in the module posts to the same
+$string['oublog'] = 'Blog';
+$string['modulename'] = 'Blog';
+$string['modulenameplural'] = 'Blogs';
+$string['modulename_help'] = 'This allows for the creation of blogs within a course. You can have module-wide blogs (everyone in the module posts to the same
 blog), group blogs, or individual blogs. The blog activity can be renamed to reflect its purpose e.g. Learning Log.';
 
 $string['oublogintro'] = 'Intro';
@@ -27,7 +26,7 @@ $string['lastmodified'] = 'Last post: {$a}';
 $string['strftimerecent'] = '%d %B %y, %H:%M';
 
 $string['oublog:view'] = 'View posts';
-$string['oublog:addinstance'] = 'Add a new OU blog';
+$string['oublog:addinstance'] = 'Add a new blog';
 $string['oublog:viewpersonal'] = 'View posts in personal blogs';
 $string['oublog:viewprivate'] = 'View private posts in personal blogs';
 $string['oublog:contributepersonal'] = 'Post and comment in personal blogs';
@@ -238,9 +237,9 @@ $string['completioncomments'] = 'User must make comments on blog posts:';
 $string['completiondetail:posts'] = 'Make {$a->name} posts: {$a->number}';
 $string['completiondetail:comments'] = 'Make comments: {$a}';
 
-$string['computingguide'] = 'Guide to OU blogs';
+$string['computingguide'] = 'Guide to blogs';
 $string['computingguideurl'] = 'Computing guide URL';
-$string['computingguideurlexplained'] = 'Enter the URL for the OU blogs omputing guide';
+$string['computingguideurlexplained'] = 'Enter the URL for the blogs computing guide';
 
 $string['maybehiddenposts'] = 'This {$a->name} might contain posts that are only
 visible to logged-in users, or where only logged-in users can comment. If you
@@ -392,10 +391,10 @@ commenting to logged-in users only.
   {$a->restrictbloglink}
 ';
 
-$string['displayversion'] = 'OU blog version: <strong>{$a}</strong>';
+$string['displayversion'] = 'Blog version: <strong>{$a}</strong>';
 
-$string['pluginadministration'] = 'OU Blog administration';
-$string['pluginname'] = 'OU Blog';
+$string['pluginadministration'] = 'Blog administration';
+$string['pluginname'] = 'Blog';
 // Help strings.
 $string['allowcomments_help'] = '&lsquo;Yes, from signed-on users&rsquo; allows comments from users who have access to the post.
 
@@ -436,8 +435,8 @@ $string['viewblogdetails'] = 'View blog details';
 $string['viewblogposts'] = 'Return to blog';
 
 // User participation.
-$string['oublog:grade'] = 'Grade OU Blog user participation';
-$string['oublog:viewparticipation'] = 'View OU Blog user participation';
+$string['oublog:grade'] = 'Grade blog user participation';
+$string['oublog:viewparticipation'] = 'View blog user participation';
 $string['userparticipation'] = 'User participation';
 $string['usersparticipation'] = 'All users participation';
 $string['myparticipation'] = 'My participation summary';
@@ -656,8 +655,8 @@ $string['teachergrading'] = 'Teacher grades students';
 $string['userrating'] = 'Use ratings';
 $string['share'] = 'Share post';
 $string['tweet'] = 'Tweet';
-$string['oublogcrontask'] = 'OU blog maintenance jobs';
-$string['oublogsettingstask'] = 'OU Blog settings task';
+$string['oublogcrontask'] = 'Blog maintenance jobs';
+$string['oublogsettingstask'] = 'Blog settings task';
 
 $string['restricttags'] = 'Tag options';
 $string['restricttags_none'] = 'Individual tags (separated by commas) can be added to a post if required';
@@ -670,14 +669,14 @@ tag entry to only those that are pre-defined at activity level and/or require th
 $string['restricttagslist'] = 'You may only enter the \'Set\' tags: {$a}';
 $string['restricttagsvalidation'] = 'Only \'Set\' tags are allowed to be entered';
 
-$string['search:post'] = 'OU blog - posts';
-$string['search:activity'] = 'OU blog - activity information';
-$string['search:comments'] = 'OU blog - posts comments';
+$string['search:post'] = 'Blog - posts';
+$string['search:activity'] = 'Blog - activity information';
+$string['search:comments'] = 'Blog - posts comments';
 $string['numberofposts'] = 'Number of posts per page';
 $string['numberofposts_help'] = 'Set the number of posts per page to display in a blog.';
 
 // GDPR.
-$string['privacy:metadata:oublog_comments'] = 'Comments on an OU blog post.';
+$string['privacy:metadata:oublog_comments'] = 'Comments on a blog post.';
 $string['privacy:metadata:oublog_comments:title'] = 'The title of the comment.';
 $string['privacy:metadata:oublog_comments:userid'] = 'The user ID of the comment originator.';
 $string['privacy:metadata:oublog_comments:message'] = 'The comment detail.';
@@ -685,32 +684,32 @@ $string['privacy:metadata:oublog_comments:messageformat'] = 'Format of text in t
 $string['privacy:metadata:oublog_comments:authorname'] = 'For moderated comments: author name (required).';
 $string['privacy:metadata:oublog_comments:authorip'] = 'For moderated comments: author IP address (required).';
 
-$string['privacy:metadata:oublog_instances'] = 'Instances of a personal OU blog.';
-$string['privacy:metadata:oublog_instances:name'] = 'The name of the OU blog instance.';
-$string['privacy:metadata:oublog_instances:userid'] = 'The user ID of the OU blog instance owner.';
-$string['privacy:metadata:oublog_instances:summary'] = 'Summary of the OU blog instance.';
+$string['privacy:metadata:oublog_instances'] = 'Instances of a personal blog.';
+$string['privacy:metadata:oublog_instances:name'] = 'The name of the blog instance.';
+$string['privacy:metadata:oublog_instances:userid'] = 'The user ID of the blog instance owner.';
+$string['privacy:metadata:oublog_instances:summary'] = 'Summary of the blog instance.';
 
-$string['privacy:metadata:oublog_posts'] = 'Posts in an OU blog.';
-$string['privacy:metadata:oublog_posts:message'] = 'The text of the OU blog post.';
+$string['privacy:metadata:oublog_posts'] = 'Posts in a blog.';
+$string['privacy:metadata:oublog_posts:message'] = 'The text of the blog post.';
 $string['privacy:metadata:oublog_posts:messageformat'] = 'Format of text in the \'message\' field, e.g. FORMAT_HTML.';
-$string['privacy:metadata:oublog_posts:title'] = 'The title of the OU blog post.';
+$string['privacy:metadata:oublog_posts:title'] = 'The title of the blog post.';
 $string['privacy:metadata:oublog_posts:deletedby'] = 'The user who deleted this blog post (if it was deleted).';
-$string['privacy:metadata:oublog_posts:lasteditedby'] = 'The user to last edit the OU blog post (if it was edited).';
+$string['privacy:metadata:oublog_posts:lasteditedby'] = 'The user to last edit the blog post (if it was edited).';
 
-$string['privacy:metadata:oublog_edits'] = 'OU blog edits (holds previous OU blog post versions).';
-$string['privacy:metadata:oublog_edits:userid'] = 'The user ID of the OU blog post editor.';
-$string['privacy:metadata:oublog_edits:oldtitle'] = 'The previous title of the OU blog post.';
-$string['privacy:metadata:oublog_edits:oldmessage'] = 'The previous content of the OU blog post.';
+$string['privacy:metadata:oublog_edits'] = 'Blog edits (holds previous blog post versions).';
+$string['privacy:metadata:oublog_edits:userid'] = 'The user ID of the blog post editor.';
+$string['privacy:metadata:oublog_edits:oldtitle'] = 'The previous title of the blog post.';
+$string['privacy:metadata:oublog_edits:oldmessage'] = 'The previous content of the blog post.';
 
-$string['privacy:metadata:oublog_tags'] = 'Tags associated with OU blog posts.';
-$string['privacy:metadata:oublog_tags:tag'] = 'The OU blog post tag.';
+$string['privacy:metadata:oublog_tags'] = 'Tags associated with blog posts.';
+$string['privacy:metadata:oublog_tags:tag'] = 'The blog post tag.';
 
-$string['privacy:metadata:oublog_taginstances'] = 'OU blog instances of tags.';
-$string['privacy:metadata:oublog_taginstances:oubloginstancesid'] = 'The OU blog instance the tag is associated with.';
-$string['privacy:metadata:oublog_taginstances:postid'] = 'The OU blog post the tag is associated with.';
+$string['privacy:metadata:oublog_taginstances'] = 'Blog instances of tags.';
+$string['privacy:metadata:oublog_taginstances:oubloginstancesid'] = 'The blog instance the tag is associated with.';
+$string['privacy:metadata:oublog_taginstances:postid'] = 'The blog post the tag is associated with.';
 $string['privacy:metadata:oublog_taginstances:tagid'] = 'The actual tag identifier.';
 
-$string['privacy:metadata:oublog_comments_moderated'] = 'OU blog post comments for moderation.';
+$string['privacy:metadata:oublog_comments_moderated'] = 'Blog post comments for moderation.';
 $string['privacy:metadata:oublog_comments_moderated:postid'] = 'The post id the comment is on.';
 $string['privacy:metadata:oublog_comments_moderated:title'] = 'The title the comment.';
 $string['privacy:metadata:oublog_comments_moderated:message'] = 'The comment detail.';
@@ -743,7 +742,7 @@ $string['accordion_closed'] = 'Closed';
 $string['export:title'] = 'Export';
 $string['export:header'] = 'Export';
 $string['export:description'] = 'You can export individual blog posts from your online module content using the links below. 
-Alternatively, select several posts, the export type, and click \'Export\' to download them all at once.';
+Alternatively, select several posts, the export type, and use the \'Export\' button to download them all at once.';
 $string['export:type'] = 'Export type';
 $string['export:header_title'] = 'Title';
 $string['export:header_date_posted'] = 'Date posted';
